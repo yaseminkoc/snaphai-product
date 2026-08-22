@@ -27,13 +27,13 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: '/app', label: 'Genel Bakış', icon: LayoutDashboard, end: true },
-  { to: '/app/sohbetler', label: 'Sohbetler', icon: MessagesSquare, badge: 'unread' },
-  { to: '/app/siparisler', label: 'Siparişler', icon: ShoppingBag },
-  { to: '/app/urunler', label: 'Ürünler', icon: Package },
-  { to: '/app/stok', label: 'Stok Yönetimi', icon: Boxes, badge: 'stock' },
-  { to: '/app/rapor', label: 'Sesli Rapor', icon: AudioLines },
-  { to: '/app/ayarlar', label: 'Ayarlar', icon: Settings },
+  { to: '/', label: 'Genel Bakış', icon: LayoutDashboard, end: true },
+  { to: '/sohbetler', label: 'Sohbetler', icon: MessagesSquare, badge: 'unread' },
+  { to: '/siparisler', label: 'Siparişler', icon: ShoppingBag },
+  { to: '/urunler', label: 'Ürünler', icon: Package },
+  { to: '/stok', label: 'Stok Yönetimi', icon: Boxes, badge: 'stock' },
+  { to: '/rapor', label: 'Sesli Rapor', icon: AudioLines },
+  { to: '/ayarlar', label: 'Ayarlar', icon: Settings },
 ]
 
 export function DashboardLayout() {
@@ -52,7 +52,7 @@ export function DashboardLayout() {
   const navContent = (
     <>
       <div className="px-4 pb-2 pt-5">
-        <Link to="/app" onClick={() => setOpen(false)}>
+        <Link to="/" onClick={() => setOpen(false)}>
           <Logo size={38} />
         </Link>
       </div>

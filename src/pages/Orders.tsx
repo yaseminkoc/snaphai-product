@@ -252,7 +252,7 @@ export function Orders() {
                         <div className="flex items-center gap-2">
                           <StatusSelect o={o} />
                           {o.status === 'awaiting-stock' && (
-                            <Link to="/app/stok">
+                            <Link to="/stok">
                               <Button variant="ghost" size="sm">
                                 Stok Yönetimi
                               </Button>
@@ -302,7 +302,7 @@ export function Orders() {
                   <span className="text-[12px] text-muted">{timeAgo(o.createdAt)}</span>
                   <div className="flex items-center gap-2">
                     {o.status === 'awaiting-stock' && (
-                      <Link to="/app/stok">
+                      <Link to="/stok">
                         <Button variant="ghost" size="sm">
                           Stok
                         </Button>

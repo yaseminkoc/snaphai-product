@@ -19,7 +19,7 @@ export function Logo({ size = 40, showWord = true, className, wordClassName }: L
       >
         {imgOk ? (
           <img
-            src="/logo.png"
+            src={`${import.meta.env.BASE_URL}logo.png`}
             alt="SnaphAI"
             width={size}
             height={size}

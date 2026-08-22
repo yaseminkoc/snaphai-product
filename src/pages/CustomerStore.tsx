@@ -196,10 +196,10 @@ export function CustomerStore() {
       <header className="sticky top-0 z-20 border-b border-line bg-ivory/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
           <Link
-            to="/app"
+            to="/"
             onClick={(e) => {
               e.preventDefault()
-              navigate('/app')
+              navigate('/')
             }}
             className="flex flex-none items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-semibold text-navy-700 transition-colors hover:bg-navy-700/8"
           >

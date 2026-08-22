@@ -13,10 +13,8 @@ import { VoiceReport } from '@/pages/VoiceReport'
 import { Settings } from '@/pages/Settings'
 import { CustomerStore } from '@/pages/CustomerStore'
 
-function RootRedirect() {
-  const onboarded = useStore((s) => s.onboarded)
-  return <Navigate to={onboarded ? '/app' : '/baglan'} replace />
-}
+// Router basename "/app" olduğu için tüm yollar snaphai.com/app altında çözülür.
+// Panel, base'in köküne ("/") oturur → snaphai.com/app, snaphai.com/app/siparisler …
 
 function RequireOnboarded({ children }: { children: ReactNode }) {
   const onboarded = useStore((s) => s.onboarded)
@@ -27,11 +25,11 @@ function RequireOnboarded({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<RootRedirect />} />
       <Route path="/baglan" element={<Onboarding />} />
+      <Route path="/magaza" element={<CustomerStore />} />
 
       <Route
-        path="/app"
+        path="/"
         element={
           <RequireOnboarded>
             <DashboardLayout />
@@ -47,8 +45,6 @@ export default function App() {
         <Route path="rapor" element={<VoiceReport />} />
         <Route path="ayarlar" element={<Settings />} />
       </Route>
-
-      <Route path="/magaza" element={<CustomerStore />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

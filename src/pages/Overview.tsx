@@ -85,7 +85,7 @@ export function Overview() {
             <Button variant="gold" onClick={() => navigate('/magaza')}>
               Müşteri Demosu
             </Button>
-            <Button variant="soft" onClick={() => navigate('/app/rapor')}>
+            <Button variant="soft" onClick={() => navigate('/rapor')}>
               Sesli Rapor
             </Button>
           </>
@@ -108,7 +108,7 @@ export function Overview() {
               </p>
             </div>
           </div>
-          <Button variant="navy" size="sm" onClick={() => navigate('/app/stok')}>
+          <Button variant="navy" size="sm" onClick={() => navigate('/stok')}>
             Stok Yönetimi
           </Button>
         </div>
@@ -214,7 +214,7 @@ export function Overview() {
             subtitle="En güncel işlemler"
             action={
               <Link
-                to="/app/siparisler"
+                to="/siparisler"
                 className="inline-flex items-center gap-1 text-[13px] font-semibold text-gold-600 transition-colors hover:text-gold-500"
               >
                 Tümü <ArrowRight size={15} />
@@ -246,7 +246,7 @@ export function Overview() {
             subtitle="Bu ayın öne çıkan ürünleri"
             action={
               <Link
-                to="/app/urunler"
+                to="/urunler"
                 className="inline-flex items-center gap-1 text-[13px] font-semibold text-gold-600 transition-colors hover:text-gold-500"
               >
                 Tümü <ArrowRight size={15} />

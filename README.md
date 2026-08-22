@@ -37,9 +37,35 @@ npm run build
 npm run preview
 ```
 
-## Dağıtım (Vercel)
+## Dağıtım (Vercel) — `snaphai.com/app` altında
 
-Depo Vercel'e bağlandığında `vercel.json` otomatik algılanır (Vite, SPA yönlendirmeleri hazır). Ayrı bir yapılandırma gerekmez.
+Uygulama `/app` yolu altında yayınlanacak şekilde yapılandırıldı: Vite `base: '/app/'`,
+React Router `basename="/app"`, çıktı `dist/app/` klasörüne düşer.
+
+### Yöntem A — İki ayrı Vercel projesi + rewrite (önerilen)
+
+Marka sitesi (`snaphai`) ve ürün (`snaphai_product`) **ayrı klasör/repo olarak kalır.**
+
+1. `snaphai_product`'ı ayrı bir Vercel projesi olarak deploy edin → örn. `snaphai-product.vercel.app`
+   (bu projeye özel domain gerekmez; `vercel.json` hazır).
+2. Marka sitesinin (`snaphai`) `vercel.json`'una şu rewrite'ları ekleyin:
+   ```json
+   "rewrites": [
+     { "source": "/app", "destination": "https://snaphai-product.vercel.app/app" },
+     { "source": "/app/(.*)", "destination": "https://snaphai-product.vercel.app/app/$1" }
+   ]
+   ```
+3. Marka sitesini yeniden deploy edin. Artık `snaphai.com/app` ürünü gösterir.
+
+### Yöntem B — Tek deploy (ürünü marka klasörüne göm)
+
+1. `snaphai_product`'ta `npm run build` → `dist/app/` üretilir.
+2. `dist/app` klasörünü `snaphai/app` içine kopyalayın.
+3. `snaphai/vercel.json`'a SPA fallback ekleyin:
+   ```json
+   "rewrites": [{ "source": "/app/(.*)", "destination": "/app/index.html" }]
+   ```
+4. Marka reposunu push edin. Her ürün güncellemesinde 1-2. adımları tekrarlayın.
 
 ## Marka
 
@@ -50,4 +76,3 @@ Depo Vercel'e bağlandığında `vercel.json` otomatik algılanır (Vite, SPA y�
 ---
 
 Founders Create Hackathon için geliştirildi.
-# snaphai-product

@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:embed": "npm run build && node scripts/embed.mjs",
     "preview": "vite preview",
     "lint": "eslint ."
   },

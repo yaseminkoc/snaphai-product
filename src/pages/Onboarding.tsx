@@ -83,7 +83,7 @@ export function Onboarding() {
               categoryCount={categoryCount}
               onEnter={() => {
                 completeOnboarding()
-                navigate('/app')
+                navigate('/')
               }}
               onDemo={() => navigate('/magaza')}
             />

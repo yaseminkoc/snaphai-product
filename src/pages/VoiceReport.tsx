@@ -182,7 +182,7 @@ export function VoiceReport() {
             <span className="absolute inset-0 rounded-full bg-gold-grad opacity-30 blur-xl" />
             {imgOk ? (
               <img
-                src="/mascot.png"
+                src={`${import.meta.env.BASE_URL}mascot.png`}
                 alt=""
                 className={`relative h-[120px] w-[120px] object-contain drop-shadow-lg ${
                   playing ? 'animate-pulse' : ''
