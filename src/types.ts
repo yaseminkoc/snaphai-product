@@ -8,7 +8,9 @@ export type PlanTier = 'baslangic' | 'profesyonel' | 'kurumsal'
 export interface PlanInfo {
   tier: PlanTier
   name: string // "Başlangıç" | "Profesyonel" | "Kurumsal"
-  priceMonthly: number
+  tagline: string // hedef kitle: "Büyüyen butikler" vb.
+  priceMonthly: number // aylık ₺; priceLabel varsa yok sayılır
+  priceLabel?: string // sabit fiyat yerine metin (ör. "Size Özel")
   color: string
 }
 

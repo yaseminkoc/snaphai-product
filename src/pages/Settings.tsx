@@ -114,23 +114,28 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 /* ---- Plan özellikleri (lokal, kurumsal ton) ---- */
+// Özellikler marka sitesi (snaphai.com/#fiyat) ile hizalıdır.
 const planFeatures: Record<PlanTier, string[]> = {
   baslangic: [
-    'Aylık 200 mesaja kadar otomatik yanıt',
-    'Temel ürün kataloğu senkronizasyonu',
-    'Metin tabanlı müşteri iletişimi',
+    'Instagram profil bağlama ve sihirli kurulum',
+    'Aylık 300 otonom konuşma',
+    'Yazılı yapay zeka satış asistanı',
+    'Otomatik ürün ve fiyat kataloğu',
+    'Güvenli ödeme linki (iyzico / PayTR)',
   ],
   profesyonel: [
-    'Sınırsız otomatik mesaj ve pazarlık motoru',
-    'Sesli mesaj ve sesli yanıt desteği',
-    'Ödeme bağlantısıyla otomatik satış kapama',
-    'Günlük performans raporları',
+    'Başlangıç’taki her şey ve dahası',
+    'Sesten sese ticaret (sesli mesaj → sesli yanıt)',
+    'Dinamik pazarlık motoru ve niyet analizi',
+    'Aylık 2.000 otonom konuşma',
+    'Sesli günlük rapor ve akıllı stok uyarıları',
   ],
   kurumsal: [
-    'Profesyonel plandaki tüm özellikler',
-    'Öncelikli destek ve özel entegrasyonlar',
-    'Gelişmiş stok ve talep tahmini',
-    'Çoklu mağaza yönetimi',
+    'Profesyonel’deki her şey ve dahası',
+    'Sınırsız otonom konuşma',
+    'Çoklu mağaza ve ekip yönetimi',
+    'Gelişmiş analitik ve API erişimi',
+    'Özel kurulum ve 7/24 öncelikli destek',
   ],
 }
 
@@ -334,9 +339,10 @@ export function Settings() {
                       </Badge>
                     )}
                   </div>
+                  <p className="mt-1 text-[12.5px] text-muted">{plan.tagline}</p>
                   <p className="mt-2 font-display text-[24px] font-semibold text-navy-700">
-                    {plan.priceMonthly === 0 ? (
-                      'Ücretsiz'
+                    {plan.priceLabel ? (
+                      plan.priceLabel
                     ) : (
                       <>
                         {formatTRY(plan.priceMonthly)}
@@ -362,10 +368,16 @@ export function Settings() {
                       variant="outline"
                       block
                       onClick={() =>
-                        pushToast({ title: 'Plan talebiniz alındı', tone: 'info' })
+                        pushToast({
+                          title:
+                            tier === 'kurumsal'
+                              ? 'Talebiniz alındı — satış ekibimiz sizinle iletişime geçecek'
+                              : 'Plan talebiniz alındı',
+                          tone: 'info',
+                        })
                       }
                     >
-                      Planı değiştir
+                      {tier === 'kurumsal' ? 'Satış ekibiyle görüşün' : 'Planı değiştir'}
                     </Button>
                   )}
                 </div>

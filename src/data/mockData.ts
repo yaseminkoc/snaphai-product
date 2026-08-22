@@ -365,10 +365,30 @@ export const defaultSettings: NegotiationSettings = {
 
 /* ---------------- Planlar ---------------- */
 
+// Fiyatlar marka sitesi (snaphai.com/#fiyat) ile birebir uyumludur.
 export const plans: Record<PlanTier, PlanInfo> = {
-  baslangic: { tier: 'baslangic', name: 'Başlangıç', priceMonthly: 0, color: '#5f6a80' },
-  profesyonel: { tier: 'profesyonel', name: 'Profesyonel', priceMonthly: 899, color: '#c9a24b' },
-  kurumsal: { tier: 'kurumsal', name: 'Kurumsal', priceMonthly: 2490, color: '#0f2447' },
+  baslangic: {
+    tier: 'baslangic',
+    name: 'Başlangıç',
+    tagline: 'Yeni başlayan butikler',
+    priceMonthly: 899,
+    color: '#5f6a80',
+  },
+  profesyonel: {
+    tier: 'profesyonel',
+    name: 'Profesyonel',
+    tagline: 'Büyüyen butikler',
+    priceMonthly: 1899,
+    color: '#c9a24b',
+  },
+  kurumsal: {
+    tier: 'kurumsal',
+    name: 'Kurumsal',
+    tagline: 'Yüksek hacim ve ajanslar',
+    priceMonthly: 0,
+    priceLabel: 'Size Özel',
+    color: '#0f2447',
+  },
 }
 
 /* ---------------- Onboarding tarama adımları ---------------- */
