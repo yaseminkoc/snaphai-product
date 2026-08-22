@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
-import { ArrowLeft, Send, Mic, Sparkles } from 'lucide-react'
+import { ArrowLeft, Send, Mic, Eye, Instagram } from 'lucide-react'
 import type { Customer, Message, Product } from '@/types'
 import { useStore } from '@/store/useStore'
-import { formatTRY } from '@/lib/format'
+import { formatTRY, formatCompact } from '@/lib/format'
 import {
   speak,
   cancelSpeech,
   recognitionSupported,
   startRecognition,
 } from '@/lib/voice'
-import { Avatar, Button, Mascot } from '@/components/ui'
+import { Avatar, Button } from '@/components/ui'
 import { MessageBubble } from '@/components/chat/MessageBubble'
 
 /** Demo boyunca müşteri rolünü üstlenen sabit ziyaretçi. */
@@ -183,8 +183,8 @@ export function CustomerStore() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-cream-2 text-muted">
         <div className="flex items-center gap-2 text-[15px]">
-          <Sparkles size={18} className="text-gold-600" />
-          Deneyim hazırlanıyor…
+          <Instagram size={18} className="text-gold-600" />
+          Sohbet yükleniyor…
         </div>
       </div>
     )
@@ -194,35 +194,34 @@ export function CustomerStore() {
     <div className="flex min-h-screen flex-col bg-cream-2">
       {/* Üst bar */}
       <header className="sticky top-0 z-20 border-b border-line bg-ivory/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
-          <Link
-            to="/"
-            onClick={(e) => {
-              e.preventDefault()
-              navigate('/')
-            }}
-            className="flex flex-none items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-semibold text-navy-700 transition-colors hover:bg-navy-700/8"
-          >
-            <ArrowLeft size={16} />
-            <span className="hidden sm:inline">Panele dön</span>
-          </Link>
-
-          <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            <Avatar initials={store.avatarInitials} tone="navy" size={40} />
-            <div className="min-w-0">
-              <p className="truncate font-semibold leading-tight text-ink">{store.name}</p>
-              <div className="flex items-center gap-1.5 text-[12px] text-muted">
-                <span className="relative flex h-2 w-2 flex-none">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/70" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                </span>
-                <span className="truncate">SnaphAI ile yanıtlıyor</span>
-              </div>
-            </div>
+        {/* Esnaf çerçevesi — bu ekran, müşterilerinizin Instagram'da gördüğü deneyimin önizlemesidir. */}
+        <div className="bg-navy-700 text-white">
+          <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4 py-2">
+            <button
+              onClick={() => navigate('/')}
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white/85 transition-colors hover:text-white"
+            >
+              <ArrowLeft size={16} />
+              Panele dön
+            </button>
+            <span className="hidden items-center gap-1.5 text-[12px] font-medium text-white/70 sm:inline-flex">
+              <Eye size={13} /> Müşterilerinizin gördüğü deneyim
+            </span>
+            <span className="flex-none rounded-full bg-gold-grad px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-navy-900">
+              Önizleme
+            </span>
           </div>
+        </div>
 
-          <span className="flex-none rounded-full bg-gold-grad px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-navy-900">
-            Demo
+        {/* Instagram DM başlığı — müşteri gözünden butik hesabı (SnaphAI görünmez) */}
+        <div className="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
+          <Avatar initials={store.avatarInitials} tone="navy" size={40} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-semibold leading-tight text-ink">{store.name}</p>
+            <p className="truncate text-[12px] text-muted">Genellikle hemen yanıtlar</p>
+          </div>
+          <span className="flex flex-none items-center gap-1 rounded-full bg-navy-700/6 px-2.5 py-1 text-[11px] font-semibold text-muted">
+            <Instagram size={13} className="text-gold-600" /> Instagram
           </span>
         </div>
 
@@ -269,13 +268,15 @@ export function CustomerStore() {
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-2.5 px-4 py-5">
           {messages.length === 0 ? (
-            <div className="mx-auto mt-14 max-w-sm rounded-[22px] border border-line bg-white/70 px-6 py-8 text-center shadow-card">
-              <Mascot size={96} glow float className="mx-auto mb-3" />
-              <p className="font-display text-[18px] font-semibold text-ink">
-                Yapay zeka çalışanınız hazır
+            <div className="mx-auto mt-10 flex max-w-sm flex-col items-center rounded-[22px] border border-line bg-white/70 px-6 py-9 text-center shadow-card">
+              <Avatar initials={store.avatarInitials} tone="navy" size={64} />
+              <p className="mt-3 font-display text-[18px] font-semibold text-ink">{store.name}</p>
+              <p className="mt-0.5 text-[12.5px] text-muted">
+                {store.handle} · {formatCompact(store.followers)} takipçi
               </p>
-              <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
-                Bir ürün seçin veya yazın; yapay zeka çalışanı hemen yanıtlasın.
+              <p className="mt-3 text-[14px] leading-relaxed text-muted">
+                Ürünlerimiz hakkında soru sorabilir; beden, fiyat öğrenip sipariş
+                verebilirsiniz. Aşağıdan bir ürün seçin ya da mesaj yazın.
               </p>
             </div>
           ) : (

@@ -114,9 +114,9 @@ export function DashboardLayout() {
         >
           <Store size={18} className="flex-none" />
           <span className="flex-1 leading-tight">
-            Müşteri Demosu
+            Müşteri Deneyimi
             <span className="block text-[11px] font-medium text-muted">
-              AI’ın nasıl sattığını görün
+              Müşterileriniz ne görüyor?
             </span>
           </span>
         </Link>
@@ -166,7 +166,7 @@ export function DashboardLayout() {
               to="/store"
               className="hidden items-center gap-2 rounded-full border border-line px-3.5 py-2 text-[13px] font-semibold text-navy-700 transition-colors hover:bg-navy-700/5 sm:inline-flex"
             >
-              <Store size={16} /> Müşteri Demosu
+              <Store size={16} /> Müşteri Deneyimi
             </Link>
             <Avatar initials={store.avatarInitials} tone="gold" size={38} />
           </div>

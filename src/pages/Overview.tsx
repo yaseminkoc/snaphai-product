@@ -84,7 +84,7 @@ export function Overview() {
         actions={
           <>
             <Button variant="gold" onClick={() => navigate('/store')}>
-              Müşteri Demosu
+              Müşteri Deneyimi
             </Button>
             <Button variant="soft" onClick={() => navigate('/report')}>
               Sesli Rapor
