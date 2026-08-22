@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   AudioLines,
-  Play,
-  Pause,
   Mic,
-  MicOff,
+  Power,
+  Hand,
   TrendingUp,
   ShoppingBag,
   MessageSquare,
@@ -13,14 +12,10 @@ import {
   Target,
   Sparkles,
   Star,
+  Play,
 } from 'lucide-react'
 import { useStore } from '@/store/useStore'
-import {
-  formatTRY,
-  formatNumber,
-  formatDate,
-  pct,
-} from '@/lib/format'
+import { formatTRY, formatNumber, formatDate, pct } from '@/lib/format'
 import { PageHeader, Card, CardHeader, StatCard, Button } from '@/components/ui'
 import {
   speak,
@@ -29,61 +24,59 @@ import {
   recognitionSupported,
   startRecognition,
 } from '@/lib/voice'
+import { startClapListener, type ClapListener } from '@/lib/clap'
 
 interface Recognizer {
   stop: () => void
 }
 
-interface QuestionChip {
-  key: string
-  label: string
-  answer: (r: ReturnType<typeof buildAnswers>) => string
-}
-
-function buildAnswers(report: {
-  revenue: number
-  orderCount: number
-  narrative: string
-  topProductName: string
-}) {
-  return report
+/** Yazıyor gibi kademeli beliren metin (animasyonlu yanıt). */
+function Typewriter({ text }: { text: string }) {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    setN(0)
+    if (!text) return
+    let i = 0
+    const id = window.setInterval(() => {
+      i += 2
+      setN(i)
+      if (i >= text.length) window.clearInterval(id)
+    }, 24)
+    return () => window.clearInterval(id)
+  }, [text])
+  return (
+    <>
+      {text.slice(0, n)}
+      {n < text.length && <span className="animate-pulse">▍</span>}
+    </>
+  )
 }
 
 export function VoiceReport() {
   const computeReport = useStore((s) => s.computeReport)
   const [report] = useState(() => computeReport())
 
-  const [playing, setPlaying] = useState(false)
-  const [listening, setListening] = useState(false)
+  const [active, setActive] = useState(false) // Lumi dinleme modu
+  const [speaking, setSpeaking] = useState(false)
+  const [awake, setAwake] = useState(false) // alkış sonrası uyanık
   const [heard, setHeard] = useState('')
   const [answer, setAnswer] = useState('')
-  const [micNote, setMicNote] = useState('')
+  const [note, setNote] = useState('')
 
-  const recognizerRef = useRef<Recognizer | null>(null)
+  const activeRef = useRef(false)
+  const speakingRef = useRef(false)
+  const awakeRef = useRef(false)
+  const recRef = useRef<Recognizer | null>(null)
+  const clapRef = useRef<ClapListener | null>(null)
+  const awakeTimer = useRef<number | null>(null)
 
   const canSpeak = speechSupported()
   const canListen = recognitionSupported()
 
-  // Temizlik: bileşen kaldırılırken sesi ve dinlemeyi durdur.
   useEffect(() => {
-    return () => {
-      cancelSpeech()
-      recognizerRef.current?.stop()
-      recognizerRef.current = null
-    }
+    return () => stopLumi()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  function togglePlay() {
-    if (playing) {
-      cancelSpeech()
-      setPlaying(false)
-      return
-    }
-    speak(report.narrative, {
-      onStart: () => setPlaying(true),
-      onEnd: () => setPlaying(false),
-    })
-  }
 
   function answerFor(text: string): string {
     const q = text.toLocaleLowerCase('tr-TR')
@@ -94,105 +87,182 @@ export function VoiceReport() {
       return `Bugün ${formatNumber(report.orderCount)} sipariş tamamlandı.`
     }
     if (q.includes('stok')) {
-      return `Stok tarafında en çok ilgi gören ürününüz ${report.topProductName}. Yeniden tedarik gerektiren kalemleri Stok ekranından takip edebilirsiniz.`
+      return `En çok ilgi gören ürününüz ${report.topProductName}. Yeniden tedarik gereken kalemleri Stok ekranından takip edebilirsiniz.`
     }
     if (q.includes('mesaj') || q.includes('müşteri') || q.includes('musteri')) {
       return `Bugün ${formatNumber(report.messagesHandled)} mesaj yanıtlandı ve ${formatNumber(report.newCustomers)} yeni müşteri kazanıldı.`
     }
-    // Varsayılan: tam günlük özet.
     return report.narrative
   }
 
-  function askAndSpeak(text: string) {
+  function speakOut(text: string, afterEnd?: () => void) {
+    speakingRef.current = true
+    setSpeaking(true)
+    speak(text, {
+      onEnd: () => {
+        speakingRef.current = false
+        setSpeaking(false)
+        afterEnd?.()
+      },
+    })
+  }
+
+  function respond(text: string) {
     const a = answerFor(text)
     setHeard(text)
     setAnswer(a)
-    speak(a, {
-      onStart: () => setPlaying(true),
-      onEnd: () => setPlaying(false),
+    // Konuşurken dinlemeyi durdur (Lumi kendi sesini duymasın).
+    recRef.current?.stop()
+    recRef.current = null
+    awakeRef.current = false
+    setAwake(false)
+    speakOut(a, () => {
+      if (activeRef.current) startRec()
     })
   }
 
-  function toggleListen() {
-    if (listening) {
-      recognizerRef.current?.stop()
-      recognizerRef.current = null
-      setListening(false)
-      return
+  function handleFinal(t: string) {
+    const low = t.toLocaleLowerCase('tr-TR')
+    // "Lumi" dendiyse ya da yeni alkışlanıp uyanıksa komutu işле.
+    if (low.includes('lumi') || low.includes('lümi') || awakeRef.current) {
+      respond(t)
     }
-    setMicNote('')
-    setHeard('')
+  }
+
+  function startRec() {
+    if (!recognitionSupported()) return
     const rec = startRecognition({
-      onResult: (transcript, isFinal) => {
-        setHeard(transcript)
-        if (isFinal) {
-          setListening(false)
-          recognizerRef.current = null
-          askAndSpeak(transcript)
-        }
+      onResult: (t, isFinal) => {
+        setHeard(t)
+        if (isFinal) handleFinal(t)
       },
       onEnd: () => {
-        setListening(false)
-        recognizerRef.current = null
+        recRef.current = null
+        if (activeRef.current && !speakingRef.current) startRec()
       },
-      onError: () => {
-        setListening(false)
-        recognizerRef.current = null
-        setMicNote('Mikrofona erişilemedi veya ses algılanamadı. Lütfen tekrar deneyin.')
+      onError: (err) => {
+        recRef.current = null
+        if (err === 'not-allowed' || err === 'service-not-allowed') {
+          setNote('Mikrofon izni verilmedi. Tarayıcı ayarlarından izin verip tekrar deneyin.')
+          stopLumi()
+          return
+        }
+        if (activeRef.current && !speakingRef.current) window.setTimeout(startRec, 500)
       },
     })
-    if (!rec) {
-      setMicNote('Tarayıcınız sesli soru özelliğini desteklemiyor.')
-      return
-    }
-    recognizerRef.current = rec
-    setListening(true)
+    recRef.current = rec
   }
 
-  const chips: QuestionChip[] = [
-    { key: 'summary', label: 'Bugün ne oldu?', answer: (r) => r.narrative },
-    {
-      key: 'revenue',
-      label: 'Ciro ne kadar?',
-      answer: (r) => `Bugünün cirosu ${formatTRY(r.revenue)}.`,
-    },
+  function onClap() {
+    awakeRef.current = true
+    setAwake(true)
+    if (awakeTimer.current) window.clearTimeout(awakeTimer.current)
+    awakeTimer.current = window.setTimeout(() => {
+      awakeRef.current = false
+      setAwake(false)
+    }, 7000)
+    if (activeRef.current && !speakingRef.current && !recRef.current) startRec()
+  }
+
+  async function startLumi() {
+    setNote('')
+    setHeard('')
+    setAnswer('')
+    if (!canListen) {
+      setNote('Tarayıcınız sesli komutları desteklemiyor; aşağıdaki hazır sorulardan yararlanabilirsiniz.')
+      return
+    }
+    activeRef.current = true
+    setActive(true)
+    clapRef.current = await startClapListener(onClap) // izin yoksa null; tanıma yine denenir
+    startRec()
+  }
+
+  function stopLumi() {
+    activeRef.current = false
+    setActive(false)
+    awakeRef.current = false
+    setAwake(false)
+    speakingRef.current = false
+    setSpeaking(false)
+    recRef.current?.stop()
+    recRef.current = null
+    clapRef.current?.stop()
+    clapRef.current = null
+    if (awakeTimer.current) window.clearTimeout(awakeTimer.current)
+    cancelSpeech()
+  }
+
+  function playChip(label: string, text: string) {
+    const wasActive = activeRef.current
+    setHeard(label)
+    setAnswer(text)
+    recRef.current?.stop()
+    recRef.current = null
+    speakOut(text, () => {
+      if (wasActive) startRec()
+    })
+  }
+
+  const [imgOk, setImgOk] = useState(true)
+
+  const statusText = !active
+    ? 'Lumi uykuda'
+    : speaking
+      ? 'Lumi konuşuyor…'
+      : awake
+        ? 'Sizi dinliyorum 👂'
+        : 'Uyandırmak için el çırpın 👏'
+
+  const chips = [
+    { key: 'summary', label: 'Bugün ne oldu?', text: report.narrative },
+    { key: 'revenue', label: 'Ciro ne kadar?', text: `Bugünün cirosu ${formatTRY(report.revenue)}.` },
     {
       key: 'stock',
       label: 'Stok durumu nedir?',
-      answer: (r) =>
-        `En çok ilgi gören ürününüz ${r.topProductName}. Yeniden tedarik gereken kalemleri Stok ekranından görebilirsiniz.`,
+      text: `En çok ilgi gören ürününüz ${report.topProductName}. Yeniden tedarik gereken kalemleri Stok ekranından görebilirsiniz.`,
     },
   ]
-
-  const [imgOk, setImgOk] = useState(true)
 
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrow="SESLİ ASİSTAN"
         title="Sesli Rapor"
-        subtitle="Gün içinde meşgulken 'Bugün ne oldu?' diye sorun; yapay zeka çalışanınız günün özetini sesli olarak iletsin."
+        subtitle="Lumi'yi uyandırın; el çırpıp “Hey Lumi, bana rapor ver” deyin. Günün özetini sizinle sesli konuşarak paylaşsın."
       />
 
-      {/* Büyük oynatıcı */}
+      {/* Lumi — sesli etkileşim paneli */}
       <div className="relative overflow-hidden rounded-[22px] bg-navy-grad px-6 py-8 text-white shadow-card sm:px-10">
+        {/* dinleme halkası */}
+        {active && !speaking && (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-[65px] top-[70px] h-[120px] w-[120px] animate-ping rounded-full bg-gold-400/20 sm:left-[105px]"
+          />
+        )}
+
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:gap-8">
-          {/* Küre / maskot */}
+          {/* Maskot (Lumi) */}
           <div className="relative flex h-[130px] w-[130px] shrink-0 items-center justify-center">
-            <span className="absolute inset-0 rounded-full bg-gold-grad opacity-30 blur-xl" />
+            <span
+              className={`absolute inset-0 rounded-full bg-gold-grad blur-xl transition-opacity ${
+                speaking ? 'opacity-60' : active ? 'opacity-40' : 'opacity-25'
+              }`}
+            />
             {imgOk ? (
               <img
                 src={`${import.meta.env.BASE_URL}mascot.png`}
-                alt=""
+                alt="Lumi"
                 className={`relative h-[120px] w-[120px] object-contain drop-shadow-lg ${
-                  playing ? 'animate-pulse' : ''
+                  speaking ? 'animate-pulse' : active ? 'animate-float' : ''
                 }`}
                 onError={() => setImgOk(false)}
               />
             ) : (
               <span
                 className={`relative flex h-[120px] w-[120px] items-center justify-center rounded-full bg-gold-grad shadow-gold ${
-                  playing ? 'animate-pulse' : ''
+                  speaking ? 'animate-pulse' : ''
                 }`}
               >
                 <AudioLines size={48} className="text-navy-900" />
@@ -203,14 +273,17 @@ export function VoiceReport() {
           {/* Orta blok */}
           <div className="flex flex-1 flex-col items-center text-center sm:items-start sm:text-left">
             <span className="text-xs font-semibold uppercase tracking-widest text-gold-300">
-              Günlük Rapor
+              Lumi • Günlük Rapor
             </span>
-            <span className="mt-1 font-display text-2xl text-white">
-              {formatDate(report.date)}
-            </span>
+            <span className="mt-1 font-display text-2xl text-white">{formatDate(report.date)}</span>
 
-            {playing && (
-              <div className="mt-4 flex h-8 items-end gap-1" aria-hidden>
+            <p className="mt-2 flex items-center gap-2 text-[15px] font-medium text-gold-100">
+              {active && !speaking && <Hand size={16} className="text-gold-300" />}
+              {statusText}
+            </p>
+
+            {speaking && (
+              <div className="mt-3 flex h-8 items-end gap-1" aria-hidden>
                 {[0, 1, 2, 3, 4, 5, 6].map((i) => (
                   <span
                     key={i}
@@ -224,31 +297,53 @@ export function VoiceReport() {
                 ))}
               </div>
             )}
-
-            {!canSpeak && (
-              <p className="mt-4 max-w-md text-sm text-gold-100/80">
-                Tarayıcınız sesli okumayı desteklemiyor; metni aşağıda
-                okuyabilirsiniz.
-              </p>
-            )}
           </div>
 
-          {/* Oynat butonu */}
-          {canSpeak && (
+          {/* Kontrol */}
+          {canListen ? (
             <button
               type="button"
-              onClick={togglePlay}
-              aria-label={playing ? 'Durdur' : 'Oynat'}
+              onClick={active ? stopLumi : startLumi}
+              aria-label={active ? 'Lumi’yi uykuya al' : 'Lumi’yi uyandır'}
+              className={`flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-0.5 rounded-full shadow-gold transition-transform hover:scale-105 active:scale-95 ${
+                active ? 'bg-white text-navy-700' : 'bg-gold-grad text-navy-900'
+              }`}
+            >
+              {active ? <Power size={26} /> : <Mic size={26} />}
+              <span className="text-[10px] font-bold uppercase tracking-wide">
+                {active ? 'Uyut' : 'Uyandır'}
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => playChip('Bugün ne oldu?', report.narrative)}
+              aria-label="Raporu dinle"
               className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gold-grad text-navy-900 shadow-gold transition-transform hover:scale-105 active:scale-95"
             >
-              {playing ? (
-                <Pause size={34} fill="currentColor" />
-              ) : (
-                <Play size={34} fill="currentColor" className="ml-1" />
-              )}
+              <Play size={32} fill="currentColor" className="ml-1" />
             </button>
           )}
         </div>
+
+        {/* Komut ipucu */}
+        {canListen && (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 rounded-2xl bg-white/8 px-4 py-3 text-center text-sm text-gold-100 sm:justify-start">
+            <Hand size={16} className="text-gold-300" />
+            <span>
+              {active
+                ? 'El çırpın 👏 ve “Hey Lumi, bana rapor ver” deyin. “Ciro ne kadar?”, “Stok durumu?” de sorabilirsiniz.'
+                : '“Uyandır”a bir kez dokunun (mikrofon izni). Sonra el çırpıp Lumi ile konuşun.'}
+            </span>
+          </div>
+        )}
+
+        {note && <p className="mt-3 text-center text-sm text-gold-100/90 sm:text-left">{note}</p>}
+        {!canSpeak && (
+          <p className="mt-3 text-center text-sm text-gold-100/80 sm:text-left">
+            Tarayıcınız sesli okumayı desteklemiyor; raporu aşağıda metin olarak okuyabilirsiniz.
+          </p>
+        )}
 
         <style>{`
           @keyframes snap-wave {
@@ -258,12 +353,41 @@ export function VoiceReport() {
         `}</style>
       </div>
 
+      {/* Konuşma — soru & animasyonlu yanıt */}
+      {(heard || answer) && (
+        <div className="space-y-3 rounded-2xl border border-line bg-ivory p-5">
+          {heard && (
+            <div className="flex justify-end">
+              <span className="max-w-[80%] rounded-2xl rounded-br-md bg-navy-700 px-4 py-2.5 text-[14px] text-white">
+                {heard}
+              </span>
+            </div>
+          )}
+          {answer && (
+            <div className="flex items-start gap-2.5">
+              <span className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-gold-grad text-navy-900">
+                <Sparkles size={15} />
+              </span>
+              <span className="max-w-[85%] rounded-2xl rounded-bl-md border border-line bg-white px-4 py-2.5 text-[14px] leading-relaxed text-ink">
+                <Typewriter text={answer} />
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Hazır sorular (sesli komuta alternatif) */}
+      <div className="flex flex-wrap gap-2">
+        {chips.map((c) => (
+          <Button key={c.key} variant="soft" size="sm" onClick={() => playChip(c.label, c.text)}>
+            <Play size={13} /> {c.label}
+          </Button>
+        ))}
+      </div>
+
       {/* Rapor metni */}
       <Card>
-        <CardHeader
-          title="Günün Özeti"
-          subtitle="Yapay zeka çalışanınızın hazırladığı rapor metni"
-        />
+        <CardHeader title="Günün Özeti" subtitle="Lumi'nin hazırladığı rapor metni" />
         <p className="mt-4 whitespace-pre-line text-lg leading-relaxed text-ink">
           {report.narrative}
         </p>
@@ -271,36 +395,12 @@ export function VoiceReport() {
 
       {/* İstatistik grid */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-        <StatCard
-          label="Ciro"
-          value={formatTRY(report.revenue)}
-          icon={<TrendingUp size={18} />}
-        />
-        <StatCard
-          label="Sipariş"
-          value={formatNumber(report.orderCount)}
-          icon={<ShoppingBag size={18} />}
-        />
-        <StatCard
-          label="Yanıtlanan Mesaj"
-          value={formatNumber(report.messagesHandled)}
-          icon={<MessageSquare size={18} />}
-        />
-        <StatCard
-          label="Sesli Mesaj"
-          value={formatNumber(report.voiceMessages)}
-          icon={<Volume2 size={18} />}
-        />
-        <StatCard
-          label="Yeni Müşteri"
-          value={formatNumber(report.newCustomers)}
-          icon={<UserPlus size={18} />}
-        />
-        <StatCard
-          label="Dönüşüm"
-          value={pct(report.conversionRate)}
-          icon={<Target size={18} />}
-        />
+        <StatCard label="Ciro" value={formatTRY(report.revenue)} icon={<TrendingUp size={18} />} />
+        <StatCard label="Sipariş" value={formatNumber(report.orderCount)} icon={<ShoppingBag size={18} />} />
+        <StatCard label="Yanıtlanan Mesaj" value={formatNumber(report.messagesHandled)} icon={<MessageSquare size={18} />} />
+        <StatCard label="Sesli Mesaj" value={formatNumber(report.voiceMessages)} icon={<Volume2 size={18} />} />
+        <StatCard label="Yeni Müşteri" value={formatNumber(report.newCustomers)} icon={<UserPlus size={18} />} />
+        <StatCard label="Dönüşüm" value={pct(report.conversionRate)} icon={<Target size={18} />} />
       </div>
 
       {/* En çok ilgi gören ürün */}
@@ -332,90 +432,6 @@ export function VoiceReport() {
           </ul>
         </Card>
       )}
-
-      {/* Sesli soru sorun */}
-      <Card>
-        <CardHeader
-          title="Sesli Soru Sorun"
-          subtitle="Mikrofona basıp sorunuzu söyleyin ya da hazır sorulardan birini seçin."
-        />
-
-        <div className="mt-5 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-          <button
-            type="button"
-            onClick={toggleListen}
-            disabled={!canListen}
-            aria-label={listening ? 'Dinlemeyi durdur' : 'Dinlemeyi başlat'}
-            className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full shadow-md transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
-              listening ? 'bg-gold-grad text-navy-900' : 'bg-navy-700 text-white'
-            }`}
-          >
-            {canListen ? (
-              listening ? (
-                <span className="relative flex items-center justify-center">
-                  <span className="absolute h-16 w-16 animate-ping rounded-full bg-gold-400/40" />
-                  <Mic size={26} />
-                </span>
-              ) : (
-                <Mic size={26} />
-              )
-            ) : (
-              <MicOff size={26} />
-            )}
-          </button>
-
-          <div className="flex-1 text-center sm:text-left">
-            <p className="text-sm font-medium text-ink">
-              {listening
-                ? 'Dinliyorum...'
-                : canListen
-                  ? 'Sormak için mikrofona dokunun'
-                  : 'Tarayıcınız sesli soru sormayı desteklemiyor. Aşağıdaki hazır sorulardan yararlanabilirsiniz.'}
-            </p>
-            {micNote && <p className="mt-1 text-sm text-muted">{micNote}</p>}
-          </div>
-        </div>
-
-        {/* Hazır soru çipleri */}
-        <div className="mt-5 flex flex-wrap gap-2">
-          {chips.map((c) => (
-            <Button
-              key={c.key}
-              variant="soft"
-              size="sm"
-              onClick={() => {
-                const a = c.answer(buildAnswers(report))
-                setHeard(c.label)
-                setAnswer(a)
-                speak(a, {
-                  onStart: () => setPlaying(true),
-                  onEnd: () => setPlaying(false),
-                })
-              }}
-            >
-              {c.label}
-            </Button>
-          ))}
-        </div>
-
-        {/* Tanınan soru ve yanıt */}
-        {(heard || answer) && (
-          <div className="mt-5 space-y-3 rounded-2xl border border-line bg-ivory p-4">
-            {heard && (
-              <p className="text-sm text-muted">
-                <span className="font-semibold text-ink-soft">Sorunuz:</span>{' '}
-                {heard}
-              </p>
-            )}
-            {answer && (
-              <p className="text-ink">
-                <span className="font-semibold text-navy-700">Yanıt:</span>{' '}
-                {answer}
-              </p>
-            )}
-          </div>
-        )}
-      </Card>
     </div>
   )
 }

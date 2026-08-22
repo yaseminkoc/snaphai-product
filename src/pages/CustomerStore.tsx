@@ -13,6 +13,7 @@ import {
 } from '@/lib/voice'
 import { Avatar, Button } from '@/components/ui'
 import { MessageBubble } from '@/components/chat/MessageBubble'
+import { TypingBubble } from '@/components/chat/TypingBubble'
 
 /** Demo boyunca müşteri rolünü üstlenen sabit ziyaretçi. */
 const demoCustomer: Customer = {
@@ -51,6 +52,7 @@ export function CustomerStore() {
   const sendCustomerMessage = useStore((s) => s.sendCustomerMessage)
   const setConversationProduct = useStore((s) => s.setConversationProduct)
   const payOrder = useStore((s) => s.payOrder)
+  const typingConvId = useStore((s) => s.typingConvId)
 
   const [convId, setConvId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
@@ -88,7 +90,7 @@ export function CustomerStore() {
   // Yeni mesaj geldikçe en alta kaydır.
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [messages.length])
+  }, [messages.length, typingConvId])
 
   // AI sesli yanıtını otomatik oynat (son mesaj ai + voice ise).
   useEffect(() => {
@@ -292,6 +294,7 @@ export function CustomerStore() {
               />
             ))
           )}
+          {typingConvId === convId && <TypingBubble />}
           <div ref={threadEndRef} />
         </div>
       </main>

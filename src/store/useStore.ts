@@ -48,6 +48,7 @@ interface AppState {
   sessionMessages: number
   sessionVoice: number
   toasts: Toast[]
+  typingConvId: string | null
 
   /* onboarding */
   completeOnboarding: () => void
@@ -98,6 +99,7 @@ const seed = () => ({
   sessionMessages: 0,
   sessionVoice: 0,
   toasts: [] as Toast[],
+  typingConvId: null as string | null,
 })
 
 export const useStore = create<AppState>()(
@@ -144,31 +146,58 @@ export const useStore = create<AppState>()(
             : m,
         )
 
-        const updatedConv: Conversation = {
-          ...withUser,
-          messages: [...withUser.messages, ...aiMessages],
-          customer: { ...withUser.customer, stance: result.detectedStance },
-          intent: result.intent,
-          negotiatedPrice: result.negotiatedPrice ?? withUser.negotiatedPrice,
-          status: result.createdOrder ? 'awaiting' : 'active',
-          lastActivity: new Date().toISOString(),
-          unread: 0,
-        }
-
+        // 1) Müşteri mesajını hemen ekle + "yazıyor…" göstergesini aç.
         set((s) => ({
-          conversations: s.conversations.map((c) => (c.id === convId ? updatedConv : c)),
-          orders: result.createdOrder ? [result.createdOrder, ...s.orders] : s.orders,
+          conversations: s.conversations.map((c) =>
+            c.id === convId ? { ...withUser, unread: 0 } : c,
+          ),
+          typingConvId: convId,
           sessionMessages: s.sessionMessages + 1,
           sessionVoice: s.sessionVoice + (isVoice ? 1 : 0),
         }))
 
-        if (result.createdOrder) {
-          get().pushToast({
-            title: 'Yeni sipariş oluşturuldu',
-            detail: `${result.createdOrder.customerName} • ${result.createdOrder.productName}`,
-            tone: 'success',
-          })
+        // 2) AI yanıtlarını insan gibi, gecikmeli ve tek tek ekle (gerçekçi his).
+        const createdOrder = result.createdOrder
+        const firstDelay = 750
+        const perMsg = 950
+        aiMessages.forEach((m, i) => {
+          const isLast = i === aiMessages.length - 1
+          setTimeout(() => {
+            set((s) => ({
+              conversations: s.conversations.map((c) =>
+                c.id === convId
+                  ? {
+                      ...c,
+                      messages: [
+                        ...c.messages,
+                        { ...m, createdAt: new Date().toISOString() },
+                      ],
+                      customer: { ...c.customer, stance: result.detectedStance },
+                      intent: result.intent,
+                      negotiatedPrice: result.negotiatedPrice ?? c.negotiatedPrice,
+                      status: createdOrder ? 'awaiting' : 'active',
+                      lastActivity: new Date().toISOString(),
+                    }
+                  : c,
+              ),
+              typingConvId: isLast ? null : convId,
+            }))
+          }, firstDelay + i * perMsg)
+        })
+
+        // 3) Sipariş + bildirim, son mesaj göründükten sonra.
+        if (createdOrder) {
+          setTimeout(() => {
+            set((s) => ({ orders: [createdOrder, ...s.orders] }))
+            get().pushToast({
+              title: 'Yeni sipariş oluşturuldu',
+              detail: `${createdOrder.customerName} • ${createdOrder.productName}`,
+              tone: 'success',
+            })
+          }, firstDelay + aiMessages.length * perMsg)
         }
+
+        if (aiMessages.length === 0) set({ typingConvId: null })
       },
 
       markRead: (convId) =>
