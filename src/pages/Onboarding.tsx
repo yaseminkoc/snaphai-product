@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useStore } from '@/store/useStore'
 import { discoveredProducts, scanSteps } from '@/data/mockData'
-import { Button, ProductThumb } from '@/components/ui'
+import { Button, ProductThumb, Logo, Mascot } from '@/components/ui'
 import { formatTRY } from '@/lib/format'
 
 type Step = 'connect' | 'scanning' | 'done'
@@ -53,26 +53,24 @@ export function Onboarding() {
       />
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-2xl flex-col px-5 py-8 sm:py-12">
-        {/* Üst logo */}
-        <header className="mb-8 flex items-center justify-center gap-3 animate-fade-up">
-          <span
-            className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-gold-400/40 bg-white/5"
-            aria-hidden
-          >
-            <Sparkles size={20} className="text-gold-400" />
-          </span>
-          <span className="font-display text-[22px] font-bold tracking-tight text-white">
-            Snaph<span className="text-gold-400">AI</span>
-          </span>
+        {/* Üst logo (gerçek amblem) */}
+        <header className="mb-6 flex items-center justify-center animate-fade-up">
+          <Logo size={42} showWord wordClassName="text-white text-[24px]" />
         </header>
 
         <main className="flex flex-1 flex-col justify-center">
           {step === 'connect' && (
-            <ConnectStep
-              handle={handle}
-              onHandleChange={setHandle}
-              onConnect={() => setStep('scanning')}
-            />
+            <>
+              {/* Maskot — parlayan küre, hero */}
+              <div className="mb-2 flex justify-center animate-fade-up">
+                <Mascot size={148} glow float />
+              </div>
+              <ConnectStep
+                handle={handle}
+                onHandleChange={setHandle}
+                onConnect={() => setStep('scanning')}
+              />
+            </>
           )}
           {step === 'scanning' && (
             <ScanningStep handle={handle} onComplete={() => setStep('done')} />
@@ -216,9 +214,7 @@ function ScanningStep({ handle, onComplete }: ScanningStepProps) {
   return (
     <div className="animate-fade-up rounded-3xl bg-white p-7 text-ink shadow-md sm:p-10">
       <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-navy-700 text-white">
-          <Loader2 size={20} className="animate-spin text-gold-400" />
-        </span>
+        <Mascot size={52} float />
         <div className="min-w-0">
           <p className="truncate text-[16px] font-bold text-navy-700">@{handle} taranıyor</p>
           <p className="text-[13px] text-muted">Yapay zeka mağazanızı kuruyor…</p>

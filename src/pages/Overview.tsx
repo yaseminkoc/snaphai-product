@@ -33,6 +33,7 @@ import {
   Button,
   Badge,
   ProductThumb,
+  Mascot,
 } from '@/components/ui'
 
 /* Grafik tooltip'i — sadece ciro tutarını gösterir. */
@@ -185,7 +186,11 @@ export function Overview() {
         </Card>
 
         <Card>
-          <CardHeader title="Yapay zeka çalışanı bugün" subtitle="Günün öne çıkanları" />
+          <CardHeader
+            title="Yapay zeka çalışanı bugün"
+            subtitle="Günün öne çıkanları"
+            action={<Mascot size={46} float />}
+          />
           <ul className="flex flex-col gap-3">
             {report.highlights.map((item, i) => (
               <li key={i} className="flex items-start gap-2.5">

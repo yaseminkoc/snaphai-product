@@ -69,10 +69,15 @@ export default {
         shimmer: {
           '100%': { transform: 'translateX(100%)' },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both',
         'pulse-ring': 'pulse-ring 2s cubic-bezier(0.22, 0.61, 0.36, 1) infinite',
+        float: 'float 4s ease-in-out infinite',
       },
     },
   },

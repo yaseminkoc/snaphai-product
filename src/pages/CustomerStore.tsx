@@ -11,7 +11,7 @@ import {
   recognitionSupported,
   startRecognition,
 } from '@/lib/voice'
-import { Avatar, Button } from '@/components/ui'
+import { Avatar, Button, Mascot } from '@/components/ui'
 import { MessageBubble } from '@/components/chat/MessageBubble'
 
 /** Demo boyunca müşteri rolünü üstlenen sabit ziyaretçi. */
@@ -269,10 +269,8 @@ export function CustomerStore() {
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-2.5 px-4 py-5">
           {messages.length === 0 ? (
-            <div className="mx-auto mt-16 max-w-sm rounded-[22px] border border-line bg-white/70 px-6 py-8 text-center shadow-card">
-              <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/15 text-gold-600">
-                <Sparkles size={22} />
-              </span>
+            <div className="mx-auto mt-14 max-w-sm rounded-[22px] border border-line bg-white/70 px-6 py-8 text-center shadow-card">
+              <Mascot size={96} glow float className="mx-auto mb-3" />
               <p className="font-display text-[18px] font-semibold text-ink">
                 Yapay zeka çalışanınız hazır
               </p>
