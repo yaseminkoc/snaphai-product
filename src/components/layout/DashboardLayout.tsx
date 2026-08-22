@@ -28,12 +28,12 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { to: '/', label: 'Genel Bakış', icon: LayoutDashboard, end: true },
-  { to: '/sohbetler', label: 'Sohbetler', icon: MessagesSquare, badge: 'unread' },
-  { to: '/siparisler', label: 'Siparişler', icon: ShoppingBag },
-  { to: '/urunler', label: 'Ürünler', icon: Package },
-  { to: '/stok', label: 'Stok Yönetimi', icon: Boxes, badge: 'stock' },
-  { to: '/rapor', label: 'Sesli Rapor', icon: AudioLines },
-  { to: '/ayarlar', label: 'Ayarlar', icon: Settings },
+  { to: '/conversations', label: 'Sohbetler', icon: MessagesSquare, badge: 'unread' },
+  { to: '/orders', label: 'Siparişler', icon: ShoppingBag },
+  { to: '/products', label: 'Ürünler', icon: Package },
+  { to: '/stock', label: 'Stok Yönetimi', icon: Boxes, badge: 'stock' },
+  { to: '/report', label: 'Sesli Rapor', icon: AudioLines },
+  { to: '/settings', label: 'Ayarlar', icon: Settings },
 ]
 
 export function DashboardLayout() {
@@ -108,7 +108,7 @@ export function DashboardLayout() {
 
       <div className="p-3">
         <Link
-          to="/magaza"
+          to="/store"
           onClick={() => setOpen(false)}
           className="flex items-center gap-3 rounded-xl border border-gold-300 bg-gold-300/20 px-3 py-3 text-[13px] font-semibold text-gold-text transition-colors hover:bg-gold-300/35"
         >
@@ -163,7 +163,7 @@ export function DashboardLayout() {
 
           <div className="ml-auto flex items-center gap-2">
             <Link
-              to="/magaza"
+              to="/store"
               className="hidden items-center gap-2 rounded-full border border-line px-3.5 py-2 text-[13px] font-semibold text-navy-700 transition-colors hover:bg-navy-700/5 sm:inline-flex"
             >
               <Store size={16} /> Müşteri Demosu

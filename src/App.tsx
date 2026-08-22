@@ -14,19 +14,20 @@ import { Settings } from '@/pages/Settings'
 import { CustomerStore } from '@/pages/CustomerStore'
 
 // Router basename "/app" olduğu için tüm yollar snaphai.com/app altında çözülür.
-// Panel, base'in köküne ("/") oturur → snaphai.com/app, snaphai.com/app/siparisler …
+// Panel, base'in köküne ("/") oturur → snaphai.com/app, snaphai.com/app/orders …
+// URL segmentleri İngilizce; arayüz metinleri Türkçe kalır.
 
 function RequireOnboarded({ children }: { children: ReactNode }) {
   const onboarded = useStore((s) => s.onboarded)
-  if (!onboarded) return <Navigate to="/baglan" replace />
+  if (!onboarded) return <Navigate to="/connect" replace />
   return <>{children}</>
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/baglan" element={<Onboarding />} />
-      <Route path="/magaza" element={<CustomerStore />} />
+      <Route path="/connect" element={<Onboarding />} />
+      <Route path="/store" element={<CustomerStore />} />
 
       <Route
         path="/"
@@ -37,13 +38,13 @@ export default function App() {
         }
       >
         <Route index element={<Overview />} />
-        <Route path="sohbetler" element={<Conversations />} />
-        <Route path="sohbetler/:id" element={<Conversations />} />
-        <Route path="siparisler" element={<Orders />} />
-        <Route path="urunler" element={<Products />} />
-        <Route path="stok" element={<Stock />} />
-        <Route path="rapor" element={<VoiceReport />} />
-        <Route path="ayarlar" element={<Settings />} />
+        <Route path="conversations" element={<Conversations />} />
+        <Route path="conversations/:id" element={<Conversations />} />
+        <Route path="orders" element={<Orders />} />
+        <Route path="products" element={<Products />} />
+        <Route path="stock" element={<Stock />} />
+        <Route path="report" element={<VoiceReport />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

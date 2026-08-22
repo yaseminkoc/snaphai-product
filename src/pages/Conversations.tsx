@@ -79,7 +79,7 @@ export function Conversations() {
       cancelSpeech()
       setPlayingId(null)
     }
-    navigate('/sohbetler/' + convId)
+    navigate('/conversations/' + convId)
     markRead(convId)
   }
 
@@ -220,7 +220,7 @@ export function Conversations() {
               <div className="flex-none border-b border-line bg-white px-4 py-3">
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => navigate('/sohbetler')}
+                    onClick={() => navigate('/conversations')}
                     className="flex-none rounded-full p-1.5 text-navy-700 hover:bg-navy-700/5 lg:hidden"
                     aria-label="Sohbet listesine dön"
                   >

@@ -85,7 +85,7 @@ export function Onboarding() {
                 completeOnboarding()
                 navigate('/')
               }}
-              onDemo={() => navigate('/magaza')}
+              onDemo={() => navigate('/store')}
             />
           )}
         </main>

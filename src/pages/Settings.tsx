@@ -149,7 +149,7 @@ export function Settings() {
 
   const handleReplay = () => {
     resetOnboarding()
-    navigate('/baglan')
+    navigate('/connect')
   }
 
   const handleResetDemo = () => {

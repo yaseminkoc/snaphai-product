@@ -82,10 +82,10 @@ export function Overview() {
         subtitle={`${today} — yapay zeka çalışanınız bugün mağazanızı sizin için yönetiyor.`}
         actions={
           <>
-            <Button variant="gold" onClick={() => navigate('/magaza')}>
+            <Button variant="gold" onClick={() => navigate('/store')}>
               Müşteri Demosu
             </Button>
-            <Button variant="soft" onClick={() => navigate('/rapor')}>
+            <Button variant="soft" onClick={() => navigate('/report')}>
               Sesli Rapor
             </Button>
           </>
@@ -108,7 +108,7 @@ export function Overview() {
               </p>
             </div>
           </div>
-          <Button variant="navy" size="sm" onClick={() => navigate('/stok')}>
+          <Button variant="navy" size="sm" onClick={() => navigate('/stock')}>
             Stok Yönetimi
           </Button>
         </div>
@@ -214,7 +214,7 @@ export function Overview() {
             subtitle="En güncel işlemler"
             action={
               <Link
-                to="/siparisler"
+                to="/orders"
                 className="inline-flex items-center gap-1 text-[13px] font-semibold text-gold-600 transition-colors hover:text-gold-500"
               >
                 Tümü <ArrowRight size={15} />
@@ -246,7 +246,7 @@ export function Overview() {
             subtitle="Bu ayın öne çıkan ürünleri"
             action={
               <Link
-                to="/urunler"
+                to="/products"
                 className="inline-flex items-center gap-1 text-[13px] font-semibold text-gold-600 transition-colors hover:text-gold-500"
               >
                 Tümü <ArrowRight size={15} />
