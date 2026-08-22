@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    font-family: theme('fontFamily.sans');
+    color: theme('colors.ink.DEFAULT');
+    background: theme('colors.ivory');
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    font-family: theme('fontFamily.serif');
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+  }
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection {
+    background: rgba(201, 162, 75, 0.28);
+  }
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: rgba(15,36,71,.18); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(15,36,71,.32); background-clip: content-box; }
+}
+
+@layer components {
+  .font-display { font-family: theme('fontFamily.serif'); }
+
+  /* focus ring */
+  .focus-ring:focus-visible {
+    outline: 2px solid theme('colors.gold.500');
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+
+  /* card surface */
+  .card {
+    background: #fff;
+    border: 1px solid theme('colors.line');
+    border-radius: theme('borderRadius.2xl');
+    box-shadow: theme('boxShadow.card');
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-bold text-[15px] tracking-tight transition-all duration-200 ease-brand whitespace-nowrap select-none;
+  }
+  .btn-gold {
+    @apply btn text-navy-900;
+    background: linear-gradient(135deg, #d8b96a, #b8862f);
+    box-shadow: theme('boxShadow.gold');
+  }
+  .btn-gold:hover { transform: translateY(-1px); }
+  .btn-navy { @apply btn bg-navy-700 text-white hover:bg-navy-600; }
+  .btn-outline { @apply btn border-[1.6px] border-navy-700 text-navy-700 bg-transparent hover:bg-navy-700 hover:text-white; }
+  .btn-ghost { @apply btn text-navy-700 hover:text-gold-text; }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-gold-text;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(253, 251, 246, 0.85);
+    backdrop-filter: saturate(160%) blur(14px);
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .text-balance { text-wrap: balance; }
+}

@@ -1,0 +1,29 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SnaphAI amblem">
+  <defs>
+    <linearGradient id="ring" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E7D3A1"/>
+      <stop offset=".5" stop-color="#C9A24B"/>
+      <stop offset="1" stop-color="#B8862F"/>
+    </linearGradient>
+    <linearGradient id="pin" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#E7D3A1"/>
+      <stop offset="1" stop-color="#C9A24B"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer guild ring -->
+  <circle cx="60" cy="60" r="55" stroke="url(#ring)" stroke-width="2.5"/>
+  <!-- Stylized S monogram -->
+  <path d="M78 46 C78 33 46 31 46 45 C46 57 78 58 78 74 C78 89 44 89 44 74"
+        stroke="#12294D" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <!-- Needle / antenna pins rising from the mark -->
+  <g stroke="url(#pin)" stroke-width="2.4" stroke-linecap="round">
+    <line x1="70" y1="34" x2="63" y2="20"/>
+    <line x1="76" y1="34" x2="76" y2="16"/>
+    <line x1="82" y1="34" x2="89" y2="20"/>
+  </g>
+  <g fill="#C9A24B">
+    <circle cx="62.5" cy="19" r="3"/>
+    <circle cx="76" cy="14.5" r="3"/>
+    <circle cx="89.5" cy="19" r="3"/>
+  </g>
+</svg>
