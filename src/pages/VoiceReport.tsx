@@ -56,6 +56,7 @@ export function VoiceReport() {
 
   const [active, setActive] = useState(false) // Lumi dinleme modu
   const [speaking, setSpeaking] = useState(false)
+  const [thinking, setThinking] = useState(false)
   const [heard, setHeard] = useState('')
   const [answer, setAnswer] = useState('')
   const [note, setNote] = useState('')
@@ -63,6 +64,7 @@ export function VoiceReport() {
   const activeRef = useRef(false)
   const speakingRef = useRef(false)
   const recRef = useRef<Recognizer | null>(null)
+  const thinkTimer = useRef<number | null>(null)
 
   const canSpeak = speechSupported()
   const canListen = recognitionSupported()
@@ -101,16 +103,25 @@ export function VoiceReport() {
     })
   }
 
-  function respond(text: string) {
-    const a = answerFor(text)
-    setHeard(text)
-    setAnswer(a)
-    // Konuşurken dinlemeyi durdur (Lumi kendi sesini duymasın).
+  // Gerçekçi akış: soruyu göster → kısa "düşünme" → cevabı yazarak (streaming) ver + seslendir.
+  function deliver(question: string, answerText: string) {
+    setHeard(question)
+    setAnswer('')
     recRef.current?.stop()
     recRef.current = null
-    speakOut(a, () => {
-      if (activeRef.current) startRec()
-    })
+    setThinking(true)
+    if (thinkTimer.current) window.clearTimeout(thinkTimer.current)
+    thinkTimer.current = window.setTimeout(() => {
+      setThinking(false)
+      setAnswer(answerText)
+      speakOut(answerText, () => {
+        if (activeRef.current) startRec()
+      })
+    }, 1050)
+  }
+
+  function respond(text: string) {
+    deliver(text, answerFor(text))
   }
 
   function handleFinal(t: string) {
@@ -166,29 +177,26 @@ export function VoiceReport() {
     setActive(false)
     speakingRef.current = false
     setSpeaking(false)
+    setThinking(false)
+    if (thinkTimer.current) window.clearTimeout(thinkTimer.current)
     recRef.current?.stop()
     recRef.current = null
     cancelSpeech()
   }
 
   function playChip(label: string, text: string) {
-    const wasActive = activeRef.current
-    setHeard(label)
-    setAnswer(text)
-    recRef.current?.stop()
-    recRef.current = null
-    speakOut(text, () => {
-      if (wasActive) startRec()
-    })
+    deliver(label, text)
   }
 
   const [imgOk, setImgOk] = useState(true)
 
   const statusText = !active
     ? 'Lumi uykuda'
-    : speaking
-      ? 'Lumi konuşuyor…'
-      : 'Sizi dinliyorum 👂 — “Hey Lumi, bana rapor ver” deyin'
+    : thinking
+      ? 'Lumi düşünüyor…'
+      : speaking
+        ? 'Lumi konuşuyor…'
+        : 'Sizi dinliyorum 👂 — “Hey Lumi, bana rapor ver” deyin'
 
   const chips = [
     { key: 'summary', label: 'Bugün ne oldu?', text: report.narrative },
@@ -223,7 +231,7 @@ export function VoiceReport() {
           <div className="relative flex h-[130px] w-[130px] shrink-0 items-center justify-center">
             <span
               className={`absolute inset-0 rounded-full bg-gold-grad blur-xl transition-opacity ${
-                speaking ? 'opacity-60' : active ? 'opacity-40' : 'opacity-25'
+                speaking || thinking ? 'opacity-60' : active ? 'opacity-40' : 'opacity-25'
               }`}
             />
             {imgOk ? (
@@ -231,7 +239,7 @@ export function VoiceReport() {
                 src={`${import.meta.env.BASE_URL}mascot.png`}
                 alt="Lumi"
                 className={`relative h-[120px] w-[120px] object-contain drop-shadow-lg ${
-                  speaking ? 'animate-pulse' : active ? 'animate-float' : ''
+                  speaking || thinking ? 'animate-pulse' : active ? 'animate-float' : ''
                 }`}
                 onError={() => setImgOk(false)}
               />
@@ -254,7 +262,7 @@ export function VoiceReport() {
             <span className="mt-1 font-display text-2xl text-white">{formatDate(report.date)}</span>
 
             <p className="mt-2 flex items-center gap-2 text-[15px] font-medium text-gold-100">
-              {active && !speaking && <Mic size={16} className="text-gold-300" />}
+              {active && !speaking && !thinking && <Mic size={16} className="text-gold-300" />}
               {statusText}
             </p>
 
@@ -329,13 +337,31 @@ export function VoiceReport() {
         `}</style>
       </div>
 
-      {/* Konuşma — soru & animasyonlu yanıt */}
-      {(heard || answer) && (
+      {/* Konuşma — soru → düşünme → animasyonlu yanıt */}
+      {(heard || answer || thinking) && (
         <div className="space-y-3 rounded-2xl border border-line bg-ivory p-5">
           {heard && (
             <div className="flex justify-end">
               <span className="max-w-[80%] rounded-2xl rounded-br-md bg-navy-700 px-4 py-2.5 text-[14px] text-white">
                 {heard}
+              </span>
+            </div>
+          )}
+          {thinking && !answer && (
+            <div className="flex items-start gap-2.5">
+              <span className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-gold-grad text-navy-900">
+                <Sparkles size={15} />
+              </span>
+              <span className="rounded-2xl rounded-bl-md border border-line bg-white px-4 py-3">
+                <span className="flex items-center gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={i}
+                      className="h-2 w-2 rounded-full bg-navy-700/50 animate-typing"
+                      style={{ animationDelay: `${i * 160}ms` }}
+                    />
+                  ))}
+                </span>
               </span>
             </div>
           )}
