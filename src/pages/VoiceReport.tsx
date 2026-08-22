@@ -3,7 +3,6 @@ import {
   AudioLines,
   Mic,
   Power,
-  Hand,
   TrendingUp,
   ShoppingBag,
   MessageSquare,
@@ -24,7 +23,6 @@ import {
   recognitionSupported,
   startRecognition,
 } from '@/lib/voice'
-import { startClapListener, type ClapListener } from '@/lib/clap'
 
 interface Recognizer {
   stop: () => void
@@ -38,10 +36,10 @@ function Typewriter({ text }: { text: string }) {
     if (!text) return
     let i = 0
     const id = window.setInterval(() => {
-      i += 2
+      i += 1
       setN(i)
       if (i >= text.length) window.clearInterval(id)
-    }, 24)
+    }, 28)
     return () => window.clearInterval(id)
   }, [text])
   return (
@@ -58,17 +56,13 @@ export function VoiceReport() {
 
   const [active, setActive] = useState(false) // Lumi dinleme modu
   const [speaking, setSpeaking] = useState(false)
-  const [awake, setAwake] = useState(false) // alkış sonrası uyanık
   const [heard, setHeard] = useState('')
   const [answer, setAnswer] = useState('')
   const [note, setNote] = useState('')
 
   const activeRef = useRef(false)
   const speakingRef = useRef(false)
-  const awakeRef = useRef(false)
   const recRef = useRef<Recognizer | null>(null)
-  const clapRef = useRef<ClapListener | null>(null)
-  const awakeTimer = useRef<number | null>(null)
 
   const canSpeak = speechSupported()
   const canListen = recognitionSupported()
@@ -114,8 +108,6 @@ export function VoiceReport() {
     // Konuşurken dinlemeyi durdur (Lumi kendi sesini duymasın).
     recRef.current?.stop()
     recRef.current = null
-    awakeRef.current = false
-    setAwake(false)
     speakOut(a, () => {
       if (activeRef.current) startRec()
     })
@@ -123,10 +115,13 @@ export function VoiceReport() {
 
   function handleFinal(t: string) {
     const low = t.toLocaleLowerCase('tr-TR')
-    // "Lumi" dendiyse ya da yeni alkışlanıp uyanıksa komutu işле.
-    if (low.includes('lumi') || low.includes('lümi') || awakeRef.current) {
-      respond(t)
-    }
+    const hasWake = low.includes('lumi') || low.includes('lümi')
+    const hasCommand =
+      /(rapor|ciro|stok|sipariş|satış|satis|ne oldu|özet|ozet|durum|mesaj|müşteri|musteri|gelir|kazan)/.test(
+        low,
+      )
+    // "Hey Lumi..." dendiğinde ya da net bir komut duyulduğunda yanıtla.
+    if (hasWake || hasCommand) respond(t)
   }
 
   function startRec() {
@@ -153,18 +148,7 @@ export function VoiceReport() {
     recRef.current = rec
   }
 
-  function onClap() {
-    awakeRef.current = true
-    setAwake(true)
-    if (awakeTimer.current) window.clearTimeout(awakeTimer.current)
-    awakeTimer.current = window.setTimeout(() => {
-      awakeRef.current = false
-      setAwake(false)
-    }, 7000)
-    if (activeRef.current && !speakingRef.current && !recRef.current) startRec()
-  }
-
-  async function startLumi() {
+  function startLumi() {
     setNote('')
     setHeard('')
     setAnswer('')
@@ -174,22 +158,16 @@ export function VoiceReport() {
     }
     activeRef.current = true
     setActive(true)
-    clapRef.current = await startClapListener(onClap) // izin yoksa null; tanıma yine denenir
     startRec()
   }
 
   function stopLumi() {
     activeRef.current = false
     setActive(false)
-    awakeRef.current = false
-    setAwake(false)
     speakingRef.current = false
     setSpeaking(false)
     recRef.current?.stop()
     recRef.current = null
-    clapRef.current?.stop()
-    clapRef.current = null
-    if (awakeTimer.current) window.clearTimeout(awakeTimer.current)
     cancelSpeech()
   }
 
@@ -210,9 +188,7 @@ export function VoiceReport() {
     ? 'Lumi uykuda'
     : speaking
       ? 'Lumi konuşuyor…'
-      : awake
-        ? 'Sizi dinliyorum 👂'
-        : 'Uyandırmak için el çırpın 👏'
+      : 'Sizi dinliyorum 👂 — “Hey Lumi, bana rapor ver” deyin'
 
   const chips = [
     { key: 'summary', label: 'Bugün ne oldu?', text: report.narrative },
@@ -229,7 +205,7 @@ export function VoiceReport() {
       <PageHeader
         eyebrow="SESLİ ASİSTAN"
         title="Sesli Rapor"
-        subtitle="Lumi'yi uyandırın; el çırpıp “Hey Lumi, bana rapor ver” deyin. Günün özetini sizinle sesli konuşarak paylaşsın."
+        subtitle="Lumi'yi uyandırın ve “Hey Lumi, bana rapor ver” deyin. Günün özetini sizinle sesli konuşarak paylaşsın."
       />
 
       {/* Lumi — sesli etkileşim paneli */}
@@ -278,7 +254,7 @@ export function VoiceReport() {
             <span className="mt-1 font-display text-2xl text-white">{formatDate(report.date)}</span>
 
             <p className="mt-2 flex items-center gap-2 text-[15px] font-medium text-gold-100">
-              {active && !speaking && <Hand size={16} className="text-gold-300" />}
+              {active && !speaking && <Mic size={16} className="text-gold-300" />}
               {statusText}
             </p>
 
@@ -329,11 +305,11 @@ export function VoiceReport() {
         {/* Komut ipucu */}
         {canListen && (
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2 rounded-2xl bg-white/8 px-4 py-3 text-center text-sm text-gold-100 sm:justify-start">
-            <Hand size={16} className="text-gold-300" />
+            <Sparkles size={16} className="text-gold-300" />
             <span>
               {active
-                ? 'El çırpın 👏 ve “Hey Lumi, bana rapor ver” deyin. “Ciro ne kadar?”, “Stok durumu?” de sorabilirsiniz.'
-                : '“Uyandır”a bir kez dokunun (mikrofon izni). Sonra el çırpıp Lumi ile konuşun.'}
+                ? '“Hey Lumi, bana rapor ver” deyin. “Ciro ne kadar?”, “Stok durumu?” diye de sorabilirsiniz.'
+                : '“Uyandır”a bir kez dokunun (mikrofon izni verin), ardından Lumi ile konuşarak rapor isteyin.'}
             </span>
           </div>
         )}
