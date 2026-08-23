@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Wallet,
+  PiggyBank,
   ShoppingBag,
   MessagesSquare,
   TrendingUp,
@@ -9,6 +10,8 @@ import {
   AlertTriangle,
   Sparkles,
   ArrowRight,
+  Radar,
+  UserCheck,
 } from 'lucide-react'
 import {
   Area,
@@ -57,13 +60,22 @@ export function Overview() {
   const products = useStore((s) => s.products)
   const orders = useStore((s) => s.orders)
   const stockAlerts = useStore((s) => s.stockAlerts)
+  const insights = useStore((s) => s.insights)
+  const conversations = useStore((s) => s.conversations)
   const computeReport = useStore((s) => s.computeReport)
+  const resolveInsight = useStore((s) => s.resolveInsight)
 
   const report = computeReport()
+  const margin = report.revenue > 0 ? Math.round((report.profit / report.revenue) * 100) : 0
 
   const openAlerts = useMemo(
     () => stockAlerts.filter((a) => a.status === 'open'),
     [stockAlerts],
+  )
+  const openInsights = useMemo(() => insights.filter((i) => i.status === 'open'), [insights])
+  const handoffConvs = useMemo(
+    () => conversations.filter((c) => c.handoffReason),
+    [conversations],
   )
 
   const recentOrders = useMemo(() => orders.slice(0, 5), [orders])
@@ -80,7 +92,7 @@ export function Overview() {
       <PageHeader
         eyebrow="GENEL BAKIŞ"
         title={`Merhaba, ${store.name}`}
-        subtitle={`${today} — yapay zeka çalışanınız bugün mağazanızı sizin için yönetiyor.`}
+        subtitle={`${today} — siz Instagram'da işinize bakın; SnaphAI ticaret döngüsünü arkada yönetsin.`}
         actions={
           <>
             <Button variant="gold" onClick={() => navigate('/store')}>
@@ -115,14 +127,44 @@ export function Overview() {
         </div>
       )}
 
+      {/* İnsana devret bandı */}
+      {handoffConvs.length > 0 && (
+        <div className="mb-6 flex flex-col gap-3 rounded-[20px] border border-navy-600/25 bg-navy-700/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-navy-700 text-gold-300">
+              <UserCheck size={20} />
+            </span>
+            <div>
+              <p className="font-display text-[15px] font-semibold text-navy-700">
+                {handoffConvs.length} sohbet onayınızı bekliyor
+              </p>
+              <p className="mt-0.5 text-[13px] text-ink-soft">
+                SnaphAI hassas durumları (yüksek tutar, büyük indirim, iade) kendi kararıyla size devrediyor.
+              </p>
+            </div>
+          </div>
+          <Button variant="navy" size="sm" onClick={() => navigate('/conversations')}>
+            Gelen kutusu
+          </Button>
+        </div>
+      )}
+
       {/* Özet kartları */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard
           label="Bugünkü ciro"
           value={formatTRY(report.revenue)}
           icon={<Wallet size={18} />}
           delta="bu hafta"
           deltaTone="up"
+        />
+        <StatCard
+          label="Kâr"
+          value={formatTRY(report.profit)}
+          icon={<PiggyBank size={18} />}
+          delta={`%${margin} marj`}
+          deltaTone="up"
+          hint="marj korumalı"
         />
         <StatCard
           label="Sipariş"
@@ -143,6 +185,44 @@ export function Overview() {
           deltaTone="up"
         />
       </div>
+
+      {/* Proaktif İçgörüler — dashboard içinde, ayrı menü değil */}
+      {openInsights.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader
+            title="Proaktif İçgörüler"
+            subtitle="Kimse yazmasa bile SnaphAI işletmenizi izler; önünüze hazır aksiyon getirir."
+            action={
+              <Link
+                to="/patrol"
+                className="inline-flex items-center gap-1 text-[13px] font-semibold text-gold-600 transition-colors hover:text-gold-500"
+              >
+                Tümü ({openInsights.length}) <ArrowRight size={15} />
+              </Link>
+            }
+          />
+          <div className="grid gap-3 sm:grid-cols-3">
+            {openInsights.slice(0, 3).map((it) => (
+              <div key={it.id} className="flex flex-col rounded-2xl border border-line bg-ivory p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-navy-700 text-gold-300">
+                    <Radar size={15} />
+                  </span>
+                  {it.productEmoji && <span className="text-[18px]">{it.productEmoji}</span>}
+                </div>
+                <p className="text-[14px] font-semibold leading-snug text-navy-700">{it.title}</p>
+                <p className="mt-1 text-[12.5px] leading-relaxed text-ink-soft line-clamp-2">
+                  {it.detail}
+                </p>
+                <div className="mt-3 flex-1" />
+                <Button variant="soft" size="sm" onClick={() => resolveInsight(it.id, 'done')}>
+                  {it.actionLabel}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Grafik + AI özeti */}
       <div className="mt-6 grid gap-6 lg:grid-cols-[2fr_1fr]">

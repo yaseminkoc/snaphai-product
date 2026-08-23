@@ -11,6 +11,8 @@ import type {
   Conversation,
   Customer,
   DailyReport,
+  Insight,
+  InsightStatus,
   Message,
   NegotiationSettings,
   Order,
@@ -22,6 +24,7 @@ import type {
 import {
   defaultSettings,
   mockConversations,
+  mockInsights,
   mockOrders,
   mockProducts,
   mockStockAlerts,
@@ -44,6 +47,7 @@ interface AppState {
   orders: Order[]
   conversations: Conversation[]
   stockAlerts: StockAlert[]
+  insights: Insight[]
   settings: NegotiationSettings
   sessionMessages: number
   sessionVoice: number
@@ -71,6 +75,12 @@ interface AppState {
   /* stok */
   resolveStockAlert: (alertId: string, decision: 'restock' | 'notify') => void
 
+  /* proaktif devriye */
+  resolveInsight: (id: string, status: InsightStatus) => void
+
+  /* insana devret (handoff) */
+  resolveHandoff: (convId: string) => void
+
   /* ürünler */
   updateProduct: (id: string, patch: Partial<Product>) => void
 
@@ -95,6 +105,7 @@ const seed = () => ({
   orders: mockOrders,
   conversations: mockConversations,
   stockAlerts: mockStockAlerts,
+  insights: mockInsights,
   settings: defaultSettings,
   sessionMessages: 0,
   sessionVoice: 0,
@@ -175,7 +186,8 @@ export const useStore = create<AppState>()(
                       customer: { ...c.customer, stance: result.detectedStance },
                       intent: result.intent,
                       negotiatedPrice: result.negotiatedPrice ?? c.negotiatedPrice,
-                      status: createdOrder ? 'awaiting' : 'active',
+                      handoffReason: result.handoffReason ?? c.handoffReason,
+                      status: result.handoffReason || createdOrder ? 'awaiting' : 'active',
                       lastActivity: new Date().toISOString(),
                     }
                   : c,
@@ -195,6 +207,17 @@ export const useStore = create<AppState>()(
               tone: 'success',
             })
           }, firstDelay + aiMessages.length * perMsg)
+        }
+
+        // İnsana devret bildirimi (öfkeli müşteri, yüksek tutar vb.).
+        if (result.handoffReason) {
+          setTimeout(() => {
+            get().pushToast({
+              title: 'Onayınız bekleniyor',
+              detail: result.handoffReason,
+              tone: 'warn',
+            })
+          }, firstDelay + aiMessages.length * perMsg + 150)
         }
 
         if (aiMessages.length === 0) set({ typingConvId: null })
@@ -345,6 +368,35 @@ export const useStore = create<AppState>()(
           products: s.products.map((p) => (p.id === id ? { ...p, ...patch } : p)),
         })),
 
+      resolveInsight: (id, status) => {
+        const insight = get().insights.find((i) => i.id === id)
+        set((s) => ({
+          insights: s.insights.map((i) => (i.id === id ? { ...i, status } : i)),
+        }))
+        if (insight && status === 'done') {
+          get().pushToast({
+            title: `Aksiyon uygulandı: ${insight.actionLabel}`,
+            detail: insight.title,
+            tone: 'success',
+          })
+        }
+      },
+
+      resolveHandoff: (convId) => {
+        set((s) => ({
+          conversations: s.conversations.map((c) =>
+            c.id === convId
+              ? { ...c, handoffReason: undefined, status: 'active', unread: 0 }
+              : c,
+          ),
+        }))
+        get().pushToast({
+          title: 'Sohbeti devraldınız',
+          detail: 'Konuşma yönetiminiz altında; yapay zeka destek olmayı sürdürüyor.',
+          tone: 'success',
+        })
+      },
+
       updateSettings: (patch) =>
         set((s) => ({ settings: { ...s.settings, ...patch } })),
 
@@ -355,6 +407,7 @@ export const useStore = create<AppState>()(
           .map((a) => ({ name: a.productName, shortage: a.shortage }))
         return generateDailyReport({
           orders: s.orders,
+          products: s.products,
           messagesHandled: 47 + s.sessionMessages,
           voiceMessages: 8 + s.sessionVoice,
           openStockShortages,
@@ -373,7 +426,9 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'snaphai-demo',
-      version: 2,
+      version: 3,
+      // Eski sürüm state'i, yeni alanlar (insights, handoff vb.) için seed ile birleştir.
+      migrate: (persisted) => ({ ...seed(), ...(persisted as object) }) as never,
       partialize: (s) => ({
         onboarded: s.onboarded,
         store: s.store,
@@ -381,6 +436,7 @@ export const useStore = create<AppState>()(
         orders: s.orders,
         conversations: s.conversations,
         stockAlerts: s.stockAlerts,
+        insights: s.insights,
         settings: s.settings,
       }),
     },

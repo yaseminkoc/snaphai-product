@@ -40,6 +40,7 @@ export function Conversations() {
   const products = useStore((s) => s.products)
   const markRead = useStore((s) => s.markRead)
   const appendManualReply = useStore((s) => s.appendManualReply)
+  const resolveHandoff = useStore((s) => s.resolveHandoff)
 
   const { id } = useParams()
   const navigate = useNavigate()
@@ -54,7 +55,11 @@ export function Conversations() {
   const findProduct = (pid?: string): Product | undefined =>
     pid ? products.find((p) => p.id === pid) : undefined
 
-  const activeId = id ?? conversations[0]?.id
+  // Onay bekleyen (handoff) sohbetleri en üste al.
+  const ordered = [...conversations].sort(
+    (a, b) => (b.handoffReason ? 1 : 0) - (a.handoffReason ? 1 : 0),
+  )
+  const activeId = id ?? ordered[0]?.id
   const active = conversations.find((c) => c.id === activeId)
 
   // Aktif sohbet seçildiğinde okunmuş işaretle.
@@ -148,7 +153,7 @@ export function Conversations() {
           }
         >
           <div className="flex flex-col gap-2 overflow-y-auto rounded-[22px] border border-line bg-white p-2 shadow-card lg:max-h-[calc(100vh-220px)]">
-            {conversations.map((c) => {
+            {ordered.map((c) => {
               const isActive = c.id === activeId
               return (
                 <button
@@ -198,7 +203,11 @@ export function Conversations() {
                         {previewOf(c)}
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <Badge style={conversationStatusMap[c.status]} />
+                        {c.handoffReason ? (
+                          <Badge cls="bg-amber-100 text-amber-800">Onay gerekli</Badge>
+                        ) : (
+                          <Badge style={conversationStatusMap[c.status]} />
+                        )}
                         <Badge style={stanceMap[c.customer.stance]} />
                         {c.unread > 0 && (
                           <span className="ml-auto h-2.5 w-2.5 flex-none rounded-full bg-gold-500" />
@@ -273,6 +282,31 @@ export function Conversations() {
                     )
                   })()}
                 </div>
+
+                {/* İnsana devret bandı */}
+                {active.handoffReason && (
+                  <div className="mt-3 flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-2">
+                      <Hand size={16} className="mt-0.5 flex-none text-amber-600" />
+                      <div>
+                        <p className="text-[13px] font-bold text-amber-800">
+                          SnaphAI bu sohbeti size devretti
+                        </p>
+                        <p className="text-[12.5px] text-amber-700">{active.handoffReason}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="gold"
+                      size="sm"
+                      onClick={() => {
+                        resolveHandoff(active.id)
+                        setTakeOver(true)
+                      }}
+                    >
+                      <Hand size={14} /> Devral
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Mesaj alanı */}

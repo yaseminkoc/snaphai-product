@@ -6,6 +6,7 @@
 import type {
   Conversation,
   DailyReport,
+  Insight,
   NegotiationSettings,
   Order,
   PlanInfo,
@@ -242,6 +243,7 @@ export const mockConversations: Conversation[] = [
     intent: 'Toplu alım — Kaşe Palto',
     linkedProductId: 'p_kase',
     unread: 0,
+    handoffReason: 'Yüksek tutarlı toplu sipariş (10.750 ₺) — fiyat onayınız gerekli',
     messages: [
       { id: 'm1', role: 'customer', type: 'text', text: 'İyi günler. Camel kaşe paltodan kurumsal hediye için 5 adet almak istiyoruz. Fatura kesebiliyor musunuz?', createdAt: hrAgo(3) },
       { id: 'm2', role: 'ai', type: 'text', text: 'İyi günler Ayşe Hanım. Elbette, kurumsal faturamız mevcut. 5 adet Kaşe Palto için toplu alım avantajı sunabiliriz: adedi 2.450 ₺ yerine 2.150 ₺ (toplam 10.750 ₺). Beden dağılımını iletirseniz stok ve teslim süresini netleştireyim.', createdAt: hrAgo(3) },
@@ -291,6 +293,27 @@ export const mockConversations: Conversation[] = [
       { id: 'm4', role: 'ai', type: 'payment-link', text: 'Teşekkürler! Ödeme bağlantınız hazır:', productId: 'p_kot', amount: 820, paid: true, createdAt: hrAgo(5) },
     ],
   },
+  {
+    id: 'c_deniz',
+    customer: {
+      id: 'cust_deniz',
+      name: 'Deniz Kılıç',
+      handle: '@denizk',
+      avatarInitials: 'DK',
+      stance: 'kararsiz',
+      isReturning: true,
+    },
+    status: 'awaiting',
+    lastActivity: minAgo(6),
+    intent: 'İade talebi — memnuniyetsiz müşteri',
+    linkedProductId: 'p_sifon',
+    unread: 1,
+    handoffReason: 'Öfkeli müşteri + sıra dışı iade talebi — insan dokunuşu gerekli',
+    messages: [
+      { id: 'm1', role: 'customer', type: 'text', text: 'Ürün hiç beklediğim gibi çıkmadı, açıkçası çok kırgınım. İade etmek istiyorum.', createdAt: minAgo(8) },
+      { id: 'm2', role: 'ai', type: 'text', text: 'Bunu duyduğuma çok üzüldüm Deniz Hanım; yaşadığınız deneyimi önemsiyoruz. Konuyu doğrudan mağaza sorumlumuza ilettim, size özel olarak en kısa sürede dönüş yapılacak.', createdAt: minAgo(7) },
+    ],
+  },
 ]
 
 /* ---------------- Siparişler ---------------- */
@@ -315,6 +338,92 @@ export const mockStockAlerts: StockAlert[] = [
   { id: 's_triko', productId: 'p_triko', productName: 'Triko Kazak — Krem', productEmoji: '🧥', demand: 9, available: 3, shortage: 6, status: 'open', createdAt: hrAgo(6) },
 ]
 
+/* ---------------- Proaktif Devriye (kimse mesaj atmasa bile) ---------------- */
+
+export const mockInsights: Insight[] = [
+  {
+    id: 'i_newpost',
+    kind: 'new-post',
+    title: 'Yeni gönderi mağazaya dönüştü',
+    detail:
+      '@zarifbutik yeni bir gönderi paylaştı; “İpek Eşarp — Lacivert” otomatik olarak kataloğa çıkarıldı. Onayınızla yayına alınır.',
+    productId: 'p_esarp',
+    productName: 'İpek Eşarp — Lacivert',
+    productEmoji: '🧣',
+    severity: 'action',
+    actionLabel: 'Yayına al',
+    createdAt: minAgo(22),
+    status: 'open',
+  },
+  {
+    id: 'i_reorder',
+    kind: 'reorder',
+    title: 'Sadık müşteri için tekrar alışveriş zamanı',
+    detail:
+      'Can Öztürk son siparişini 34 gün önce verdi; benzer ritimde yeni alım bekleniyor. Nazik bir hatırlatma dönüşü artırabilir.',
+    severity: 'action',
+    actionLabel: 'Hatırlatma gönder',
+    createdAt: hrAgo(1),
+    status: 'open',
+  },
+  {
+    id: 'i_slow',
+    kind: 'slow-mover',
+    title: '10 gündür hiç satış yok',
+    detail:
+      'Kaşe Palto — Camel 10 gündür sipariş almadı ve görüntülenme düşüyor. Hedefli bir kampanya stok devir hızını artırabilir.',
+    productId: 'p_kase',
+    productName: 'Kaşe Palto — Camel',
+    productEmoji: '🧥',
+    severity: 'warn',
+    actionLabel: 'Kampanya öner',
+    createdAt: hrAgo(3),
+    status: 'open',
+  },
+  {
+    id: 'i_predict',
+    kind: 'low-stock',
+    title: 'Hızlı tükeniyor — tedarik zamanı',
+    detail:
+      'Kot Pantolon — Yüksek Bel günde ~2 satış hızında; mevcut 9 adet yaklaşık 4 günde biter. Şimdi tedarik ederseniz satış kaybı yaşanmaz.',
+    productId: 'p_kot',
+    productName: 'Kot Pantolon — Yüksek Bel',
+    productEmoji: '👖',
+    severity: 'action',
+    actionLabel: 'Tedarik başlat',
+    createdAt: hrAgo(7),
+    status: 'open',
+  },
+  {
+    id: 'i_margin',
+    kind: 'margin',
+    title: 'Marj eşiğine yaklaşıldı',
+    detail:
+      'Deri Ceket — Siyah’ta son pazarlıklar belirlediğiniz alt limite dayandı. Alt limiti gözden geçirerek kârlılığı koruyabilirsiniz.',
+    productId: 'p_deri',
+    productName: 'Deri Ceket — Siyah',
+    productEmoji: '🧥',
+    severity: 'warn',
+    actionLabel: 'Alt limiti gözden geçir',
+    createdAt: hrAgo(9),
+    status: 'open',
+  },
+  {
+    id: 'i_price',
+    kind: 'price-change',
+    title: 'Gönderide fiyat değişikliği algılandı',
+    detail:
+      'Kaşe Palto — Camel için son gönderide fiyat 2.450 ₺ → 2.650 ₺ güncellenmiş görünüyor. Kataloğu eşitlemek ister misiniz?',
+    productId: 'p_kase',
+    productName: 'Kaşe Palto — Camel',
+    productEmoji: '🧥',
+    severity: 'info',
+    actionLabel: 'Kataloğu güncelle',
+    createdAt: dayAgo(1),
+    status: 'open',
+  },
+]
+
 /* ---------------- Haftalık ciro ---------------- */
 
 export const mockRevenueWeek: RevenuePoint[] = [
@@ -332,6 +441,7 @@ export const mockRevenueWeek: RevenuePoint[] = [
 export const mockDailyReport: DailyReport = {
   date: new Date(now).toISOString(),
   revenue: 7231,
+  profit: 3180,
   orderCount: 10,
   messagesHandled: 47,
   voiceMessages: 8,

@@ -119,8 +119,9 @@ function ConnectStep({ handle, onHandleChange, onConnect }: ConnectStepProps) {
       </h1>
 
       <p className="mt-4 text-[15px] leading-relaxed text-ink-soft">
-        Profilinizi bağlayın, gerisini yapay zeka çalışanınız halletsin. Ürünlerinizi
-        gönderilerinizden otomatik çıkarır, mesajları yanıtlar ve siparişleri sizin için tamamlar.
+        Yeni bir yazılım öğrenmenize gerek yok. Instagram’da içerik paylaşmak, SnaphAI’de
+        mağazanızı güncellemek demek. Gerisini — mesaj, pazarlık, sipariş, stok ve kâr takibi —
+        yapay zeka çalışanınız arkada halleder.
       </p>
 
       <label htmlFor="ig-handle" className="mt-7 block text-[13px] font-semibold text-ink">

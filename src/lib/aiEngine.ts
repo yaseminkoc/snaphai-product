@@ -169,6 +169,24 @@ export function generateReply(
     return { messages, detectedStance: stance, intent: 'Otomatik yanıt kapalı' }
   }
 
+  // İnsana devret: öfkeli müşteri / sıra dışı iade / şikâyet → sakinleştir + sahibine ilet.
+  const lowIncoming = lower(incomingText)
+  if (/(iade|geri iade|kırgın|kirgin|şikayet|sikayet|berbat|rezalet|iğrenç|igrenc|çok kötü|cok kotu|dolandır|dolandir|kandır|kandir|dava|avukat)/.test(lowIncoming)) {
+    messages.push(
+      msg({
+        role: 'ai',
+        type: 'text',
+        text: `${toneOpener(settings, name)} yaşadığınız deneyim için gerçekten üzgünüm; bunu önemsiyoruz. Konuyu doğrudan mağaza sorumlumuza ilettim, size özel olarak en kısa sürede dönüş yapılacak.`,
+      }),
+    )
+    return {
+      messages,
+      detectedStance: stance,
+      intent: 'İade/şikâyet — insana devredildi',
+      handoffReason: 'Öfkeli müşteri / iade talebi — insan dokunuşu gerekli',
+    }
+  }
+
   switch (intent) {
     /* --- Selam / açılış --- */
     case 'greeting': {
@@ -398,12 +416,21 @@ export function generateReply(
         paymentProvider: settings.paymentProvider,
         createdAt: new Date().toISOString(),
       }
+      // İnsana devret: yüksek tutarlı sipariş ya da derin indirim → sahibinin haberi olsun.
+      const discountPct = ((product.price - finalPrice) / product.price) * 100
+      let handoffReason: string | undefined
+      if (finalPrice >= 2500) {
+        handoffReason = `Yüksek tutarlı sipariş (${formatTRY(finalPrice)}) — bilginize sunuldu`
+      } else if (discountPct >= settings.maxDiscountPct - 0.5) {
+        handoffReason = `Alt limitte kapanan pazarlık (%${Math.round(discountPct)} indirim) — gözünüz üstünde olsun`
+      }
       return {
         messages,
         detectedStance: stance,
         negotiatedPrice: finalPrice,
         createdOrder,
         intent: 'Satış kapatıldı — ödeme bekleniyor',
+        handoffReason,
       }
     }
 
@@ -437,13 +464,18 @@ export function generateReply(
 
 export function generateDailyReport(input: {
   orders: Order[]
+  products: Product[]
   messagesHandled: number
   voiceMessages: number
   openStockShortages: { name: string; shortage: number }[]
 }): DailyReport {
-  const { orders, messagesHandled, voiceMessages, openStockShortages } = input
+  const { orders, products, messagesHandled, voiceMessages, openStockShortages } = input
   const paid = orders.filter((o) => o.status === 'paid' || o.status === 'preparing' || o.status === 'shipped')
   const revenue = paid.reduce((s, o) => s + o.total, 0)
+  const costOf = (pid: string) => products.find((p) => p.id === pid)?.cost ?? 0
+  // Kâr = (nihai birim fiyat - maliyet) × adet; marj koruması sayesinde daima pozitif.
+  const profit = paid.reduce((s, o) => s + (o.unitPrice - costOf(o.productId)) * o.qty, 0)
+  const marginPct = revenue > 0 ? Math.round((profit / revenue) * 100) : 0
   const byProduct = new Map<string, number>()
   orders.forEach((o) => byProduct.set(o.productName, (byProduct.get(o.productName) ?? 0) + 1))
   const topProductName =
@@ -455,12 +487,14 @@ export function generateDailyReport(input: {
 
   const narrative =
     `Bugün toplam ${messagesHandled} mesaj yanıtladım ve ${orders.length} sipariş oluşturdum. ` +
-    `Günün cirosu ${formatTRY(revenue)}. En çok ilgi gören ürün ${topProductName} oldu.` +
+    `Günün cirosu ${formatTRY(revenue)}, tahmini kârı ${formatTRY(profit)} (%${marginPct} marj). ` +
+    `En çok ilgi gören ürün ${topProductName} oldu.` +
     shortageLine
 
   return {
     date: new Date().toISOString(),
     revenue,
+    profit,
     orderCount: orders.length,
     messagesHandled,
     voiceMessages,
@@ -471,6 +505,7 @@ export function generateDailyReport(input: {
     narrative,
     highlights: [
       `${orders.length} sipariş, ${formatTRY(revenue)} ciro`,
+      `${formatTRY(profit)} tahmini kâr (%${marginPct} marj korundu)`,
       `${messagesHandled} mesaj yanıtlandı (${voiceMessages} sesli)`,
       openStockShortages.length
         ? `${openStockShortages.length} üründe stok açığı — kararınız bekleniyor`

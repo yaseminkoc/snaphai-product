@@ -5,6 +5,7 @@ import { useStore } from '@/store/useStore'
 
 import { Onboarding } from '@/pages/Onboarding'
 import { Overview } from '@/pages/Overview'
+import { Patrol } from '@/pages/Patrol'
 import { Conversations } from '@/pages/Conversations'
 import { Orders } from '@/pages/Orders'
 import { Products } from '@/pages/Products'
@@ -38,6 +39,7 @@ export default function App() {
         }
       >
         <Route index element={<Overview />} />
+        <Route path="patrol" element={<Patrol />} />
         <Route path="conversations" element={<Conversations />} />
         <Route path="conversations/:id" element={<Conversations />} />
         <Route path="orders" element={<Orders />} />

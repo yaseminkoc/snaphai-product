@@ -98,6 +98,7 @@ export interface Conversation {
   linkedProductId?: string
   negotiatedPrice?: number
   unread: number
+  handoffReason?: string // dolu ise: AI kararı sahibine devretti (onay bekliyor)
 }
 
 export type OrderStatus =
@@ -147,6 +148,7 @@ export interface StockAlert {
 export interface DailyReport {
   date: string // ISO (gün)
   revenue: number
+  profit: number // kâr = satış - maliyet (marj korumalı)
   orderCount: number
   messagesHandled: number
   voiceMessages: number
@@ -186,6 +188,34 @@ export interface AiReplyResult {
   negotiatedPrice?: number
   createdOrder?: Order
   intent: string
+  handoffReason?: string // dolu ise karar sahibine devredildi (ör. yüksek tutar)
+}
+
+/* ---- Proaktif Devriye (Proactive Agent) ---- */
+
+export type InsightKind =
+  | 'slow-mover' // uzun süredir satılmıyor
+  | 'low-stock' // stok kritik
+  | 'new-post' // yeni gönderi → ürün/güncelleme
+  | 'reorder' // müşterinin tekrar alışveriş zamanı
+  | 'price-change' // gönderide fiyat değişmiş
+  | 'margin' // marj tehdidi
+
+export type InsightSeverity = 'info' | 'warn' | 'action'
+export type InsightStatus = 'open' | 'done' | 'dismissed'
+
+export interface Insight {
+  id: string
+  kind: InsightKind
+  title: string
+  detail: string
+  productId?: string
+  productName?: string
+  productEmoji?: string
+  severity: InsightSeverity
+  actionLabel: string // AI'ın önerdiği aksiyon: "Kampanya öner" vb.
+  createdAt: string // ISO
+  status: InsightStatus
 }
 
 export interface ScanProgressStep {

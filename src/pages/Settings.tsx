@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import type { ChangeEvent } from 'react'
-import { RotateCcw, Trash2, Check, Store as StoreIcon } from 'lucide-react'
+import { RotateCcw, Trash2, Check, Store as StoreIcon, ShieldCheck } from 'lucide-react'
 import type { NegotiationSettings, PlanTier } from '@/types'
 import { useStore } from '@/store/useStore'
 import { plans } from '@/data/mockData'
@@ -175,8 +175,16 @@ export function Settings() {
         <Card className="lg:row-span-2">
           <CardHeader
             title="Pazarlık Motoru"
-            subtitle="Yapay zeka çalışanınızın müşterilerle nasıl anlaşacağını belirleyin."
+            subtitle="Belirlediğiniz minimum marjı koruyarak pazarlık eder — asla zararına satmaz."
           />
+          <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-gold-300 bg-cream-2 px-3.5 py-3">
+            <ShieldCheck size={18} className="mt-0.5 flex-none text-gold-600" />
+            <p className="text-[13px] leading-relaxed text-ink-soft">
+              <span className="font-semibold text-navy-700">Marj koruması aktif.</span> SnaphAI daha
+              çok değil, <span className="font-semibold text-navy-700">daha kârlı</span> satmaya
+              odaklanır; her anlaşma sizin alt sınırınızın üstünde kapanır.
+            </p>
+          </div>
           <div className="divide-y divide-line">
             <Toggle
               label="Otomatik pazarlık ve yanıt"
@@ -191,7 +199,7 @@ export function Settings() {
               min={0}
               max={40}
               onChange={(v) => patch({ maxDiscountPct: v })}
-              hint="Yapay zeka çalışanınız bu oranın altına inmez."
+              hint="Bu oranın altına inilmez; her satışta kârınız (marjınız) korunur."
             />
 
             <RangeRow
