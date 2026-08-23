@@ -118,7 +118,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 const planFeatures: Record<PlanTier, string[]> = {
   baslangic: [
     'Instagram profil bağlama ve sihirli kurulum',
-    'Aylık 300 otonom konuşma',
+    'Sınırsız otonom konuşma',
     'Yazılı yapay zeka satış asistanı',
     'Otomatik ürün ve fiyat kataloğu',
     'Güvenli ödeme linki (iyzico / PayTR)',
@@ -127,7 +127,7 @@ const planFeatures: Record<PlanTier, string[]> = {
     'Başlangıç’taki her şey ve dahası',
     'Sesten sese ticaret (sesli mesaj → sesli yanıt)',
     'Dinamik pazarlık motoru ve niyet analizi',
-    'Aylık 2.000 otonom konuşma',
+    'Proaktif içgörüler ve talep tahmini',
     'Sesli günlük rapor ve akıllı stok uyarıları',
   ],
   kurumsal: [

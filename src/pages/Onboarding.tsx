@@ -20,9 +20,9 @@ import { formatTRY } from '@/lib/format'
 type Step = 'connect' | 'scanning' | 'done'
 
 const TRUST_ITEMS = [
-  'Kod bilgisi gerekmez',
+  'Veri girişi gerekmez',
   'Meta Graph API ile güvenli',
-  'Kredi kartı istemez',
+  'Kârınızı yönetir',
 ] as const
 
 /** Tam ekran "Magic Onboarding" — Instagram profilini akıllı mağazaya dönüştürür. */

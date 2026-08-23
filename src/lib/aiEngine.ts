@@ -318,7 +318,7 @@ export function generateReply(
             msg({
               role: 'ai',
               type: 'text',
-              text: `${toneOpener(settings, name)} ${formatTRY(offer)} biraz zor ama sizi kırmayayım: ${formatTRY(product.price)} yerine ${formatTRY(negotiatedPrice)} yapabilirim.${upsellPick ? ` Dilerseniz ${upsellPick.name}’i de ${formatTRY(upsellPick.floorPrice)}’ye ekleyip kombininizi tamamlayabiliriz.` : ''}`,
+              text: `${toneOpener(settings, name)} ${formatTRY(offer)} biraz zor ama sizi kırmayayım: ${formatTRY(product.price)} yerine ${formatTRY(negotiatedPrice)} yapabilirim.${upsellPick ? ` Dilerseniz ${upsellPick.name}’i de ${formatTRY(upsellPick.price)} yerine ${formatTRY(Math.max(upsellPick.floorPrice, round10(upsellPick.price * 0.9)))}’ye ekleyip kombininizi tamamlayabiliriz.` : ''}`,
             }),
           )
         } else {
