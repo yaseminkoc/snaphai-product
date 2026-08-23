@@ -426,9 +426,11 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'snaphai-demo',
-      version: 3,
-      // Eski sürüm state'i, yeni alanlar (insights, handoff vb.) için seed ile birleştir.
-      migrate: (persisted) => ({ ...seed(), ...(persisted as object) }) as never,
+      version: 4,
+      // Sürüm yükseltmede demo içeriğini (sohbetler, siparişler, içgörüler) tazele;
+      // yalnızca kullanıcının onboarding durumunu koru.
+      migrate: (persisted) =>
+        ({ ...seed(), onboarded: (persisted as { onboarded?: boolean })?.onboarded ?? false }) as never,
       partialize: (s) => ({
         onboarded: s.onboarded,
         store: s.store,
