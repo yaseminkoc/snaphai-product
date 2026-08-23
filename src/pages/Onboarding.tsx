@@ -6,6 +6,9 @@ import {
   CheckCircle2,
   CreditCard,
   Instagram,
+  Facebook,
+  Linkedin,
+  Youtube,
   Link2,
   Loader2,
   ShieldCheck,
@@ -23,6 +26,13 @@ const TRUST_ITEMS = [
   'Veri girişi gerekmez',
   'Meta Graph API ile güvenli',
   'Kârınızı yönetir',
+] as const
+
+const SOCIALS = [
+  { label: 'Instagram', href: 'https://www.instagram.com/snaph_ai/', Icon: Instagram },
+  { label: 'Facebook', href: 'https://www.facebook.com/profile.php?id=61593594211671', Icon: Facebook },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/snaphai/', Icon: Linkedin },
+  { label: 'YouTube', href: 'https://www.youtube.com/@snaphai', Icon: Youtube },
 ] as const
 
 /** Tam ekran "Magic Onboarding" — Instagram profilini akıllı mağazaya dönüştürür. */
@@ -88,8 +98,24 @@ export function Onboarding() {
           )}
         </main>
 
-        <footer className="mt-8 text-center text-[12px] text-white/40 animate-fade-up">
-          SnaphAI • Instagram butikleri için yapay zeka çalışanı
+        <footer className="mt-8 flex flex-col items-center gap-3.5 animate-fade-up">
+          <div className="flex items-center gap-2.5">
+            {SOCIALS.map(({ label, href, Icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/60 transition-colors hover:border-gold-400 hover:text-gold-300"
+              >
+                <Icon size={17} />
+              </a>
+            ))}
+          </div>
+          <p className="text-[12px] text-white/40">
+            SnaphAI • Instagram butikleri için yapay zeka çalışanı
+          </p>
         </footer>
       </div>
     </div>
